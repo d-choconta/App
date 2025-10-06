@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "386207044501",
+    "project_id": "decoraia-25a7c",
+    "storage_bucket": "decoraia-25a7c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386207044501:android:c32aa38e4015c30f84dc9c",
+        "android_client_info": {
+          "package_name": "com.decoraia.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8jE1d-m0v3BnWV9EWjbq3QLQAA8cG088"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

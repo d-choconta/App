@@ -1,47 +1,42 @@
 package com.decoraia.app
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.decoraia.app.ui.theme.AppTheme
+import androidx.navigation.compose.rememberNavController
+import com.decoraia.app.ui.nav.AppNavGraph
+import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            AppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+
+        FirebaseApp.initializeApp(this)
+
+        val db = FirebaseFirestore.getInstance()
+        db.collection("test").document("ping")
+            .set(mapOf("time" to System.currentTimeMillis()))
+            .addOnSuccessListener {
+                Log.d("FIREBASE", "✅ Conectado a Firestore")
             }
+            .addOnFailureListener { e ->
+                Log.e("FIREBASE", "❌ Error: ${e.message}")
+            }
+
+        setContent {
+            DecoraIAApp()
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    AppTheme {
-        Greeting("Android")
+fun DecoraIAApp() {
+    val navController = rememberNavController()
+    MaterialTheme {
+        AppNavGraph(navController = navController)
     }
 }
