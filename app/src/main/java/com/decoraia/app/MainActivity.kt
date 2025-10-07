@@ -8,7 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.decoraia.app.ui.navigation.AppNavGraph
+import com.decoraia.app.ui.nav.AppNavGraph   // 👈 IMPORTA EL NUEVO NAVGRAPH
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
