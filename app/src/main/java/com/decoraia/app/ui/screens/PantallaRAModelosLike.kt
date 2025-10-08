@@ -1,4 +1,4 @@
-﻿package com.decoraia.app.ui.screens
+package com.decoraia.app.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -31,22 +31,24 @@ fun PantallaRAModelosLike(navController: NavController, modelId: String) {
             Text("Dar like al modelo", style = MaterialTheme.typography.headlineMedium)
             Spacer(Modifier.height(12.dp))
             Button(onClick = {
-                if (uid != null) {
-                    db.collection("raModelos").document(modelId)
-                        .update("likes", FieldValue.arrayUnion(uid))
-                        .addOnSuccessListener {
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Like agregado")
+                when {
+                    modelId.isBlank() -> {
+                        scope.launch { snackbarHostState.showSnackbar("modelId inválido") }
+                    }
+                    uid == null -> {
+                        scope.launch { snackbarHostState.showSnackbar("Debes iniciar sesión") }
+                    }
+                    else -> {
+                        db.collection("raModelos").document(modelId)
+                            .update("likes", FieldValue.arrayUnion(uid))
+                            .addOnSuccessListener {
+                                scope.launch { snackbarHostState.showSnackbar("Like agregado") }
+                                // Opcional: volver atrás tras éxito
+                                // navController.popBackStack()
                             }
-                        }
-                        .addOnFailureListener {
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Error al dar like")
+                            .addOnFailureListener {
+                                scope.launch { snackbarHostState.showSnackbar("Error al dar like") }
                             }
-                        }
-                } else {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Debes iniciar sesión")
                     }
                 }
             }) {
