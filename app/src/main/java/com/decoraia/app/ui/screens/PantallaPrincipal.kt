@@ -18,11 +18,11 @@ fun PantallaPrincipal(navController: NavHostController) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = { navController.navigate("chat") }) {
+        Button(onClick = { navController.navigate("chatia") }) {
             Text("Ir a IA (Chat)")
         }
         Spacer(Modifier.height(12.dp))
-        Button(onClick = { navController.navigate("ra_estilos") }) {
+        Button(onClick = { navController.navigate("raestilos") }) {
             Text("Ir a RA (Estilos)")
         }
         Spacer(Modifier.height(12.dp))
@@ -37,6 +37,6 @@ fun PantallaPrincipal(navController: NavHostController) {
             }
         }) {
             Text("Cerrar sesión")
+            }
         }
-    }
 }
