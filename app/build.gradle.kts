@@ -69,6 +69,5 @@ dependencies {
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
 
-    // REMOVÍ: implementation(libs.firebase.common.ktx) ← Esto causa conflicto con el BOM
 }
 apply(plugin = "com.google.gms.google-services")
