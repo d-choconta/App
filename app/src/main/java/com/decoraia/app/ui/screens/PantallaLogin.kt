@@ -1,3 +1,5 @@
+@file:Suppress("UnusedMaterial3ScaffoldPaddingParameter")
+
 package com.decoraia.app.ui.screens
 
 import android.util.Log
@@ -21,8 +23,7 @@ fun PantallaLogin(navController: NavHostController) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
-        // UI (sin lógica) tomada del componente
+    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { _ ->
         LoginScreenUI(
             email = email,
             onEmailChange = { email = it },
@@ -39,8 +40,7 @@ fun PantallaLogin(navController: NavHostController) {
                     .addOnCompleteListener { task ->
                         loading = false
                         if (task.isSuccessful) {
-                            val uid = auth.currentUser?.uid
-                            if (uid != null) {
+                            auth.currentUser?.uid?.let { uid ->
                                 db.collection("users").document(uid)
                                     .update("lastLogin", FieldValue.serverTimestamp())
                                     .addOnSuccessListener {
@@ -62,7 +62,8 @@ fun PantallaLogin(navController: NavHostController) {
                     }
             },
             onRegisterClick = { navController.navigate("registro") },
-            onForgotClick = { /* navController.navigate("recuperar") */ }
-            )
-        }
+            onForgotClick = { navController.navigate("olvidocontrasena") },
+            onBack = { navController.popBackStack() }
+        )
+    }
 }

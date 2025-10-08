@@ -1,6 +1,6 @@
 package com.decoraia.app.ui.components
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.layout.ContentScale
+
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,7 +18,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -27,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
 
-/* ---- Paleta ---- */
+/* Paleta consistente con Login */
 private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val TerracottaDark = Color(0xFFCF8A57)
@@ -35,19 +37,19 @@ private val Cocoa = Color(0xFFB2754E)
 private val Graphite = Color(0xFF2D2A26)
 
 @Composable
-private fun TopWaves(modifier: Modifier = Modifier) {
+private fun TopWavesRegistro(modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
         val w = size.width
         val h = size.height
 
-
+        // parche terracota izquierdo (grande)
         val terracotta = Path().apply {
             moveTo(0f, 0f)
-            lineTo(w * 0.48f, 0f) // cuello superior más ancho
+            lineTo(w * 0.48f, 0f)
             cubicTo(
-                w * 0.10f, h * 0.20f,   // curva entra hacia adentro
-                w * 0.12f, h * 0.50f,   // baja fuerte
-                0f,        h * 0.70f    // termina mucho más abajo
+                w * 0.10f, h * 0.20f,
+                w * 0.12f, h * 0.50f,
+                0f,        h * 0.70f
             )
             lineTo(0f, h)
             lineTo(0f, 0f)
@@ -55,70 +57,56 @@ private fun TopWaves(modifier: Modifier = Modifier) {
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
-        // Onda cocoa derecha (más ancha y con curva hacia abajo)
+        // parche cocoa derecho
         val cocoa = Path().apply {
             moveTo(w * 0.45f, 0f)
             lineTo(w, 0f)
             lineTo(w, h * 0.95f)
             cubicTo(
-                w * 0.92f, h * 0.55f,   // curva suave hacia adentro
-                w * 0.78f, h * 0.30f,   // sube un poco
-                w * 0.70f, 0f           // vuelve arriba
+                w * 0.92f, h * 0.55f,
+                w * 0.78f, h * 0.30f,
+                w * 0.70f, 0f
             )
             close()
         }
         drawPath(cocoa, Cocoa.copy(alpha = 0.3f), style = Fill)
-
-        // Línea negra siguiendo la forma
-        val stroke = Path().apply {
-            moveTo(w * 0.28f, 0f)
-            cubicTo(
-                w * 0.10f, h * 0.20f,
-                w * 0.12f, h * 0.50f,
-                0f,        h * 0.70f
-            )
-        }
-        drawPath(
-            stroke,
-            Graphite.copy(alpha = 0.9f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
-        )
     }
 }
 
-
-
-/* ---- Login UI ---- */
+/* ----------- UI de Registro (sin lógica) ----------- */
 @Composable
-fun LoginScreenUI(
+fun RegistroScreenUI(
+    nombre: String,
+    onNombreChange: (String) -> Unit,
     email: String,
     onEmailChange: (String) -> Unit,
     password: String,
     onPasswordChange: (String) -> Unit,
+    confirm: String,
+    onConfirmChange: (String) -> Unit,
     loading: Boolean,
-    onLoginClick: () -> Unit,
     onRegisterClick: () -> Unit,
-    onForgotClick: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onHaveAccountClick: () -> Unit,
+    @DrawableRes heroImage: Int = R.drawable.logo // pon aquí tu personaje si lo tienes en drawable
 ) {
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
 
-
-            val headerHeight =90.dp
+            val headerHeight = 140.dp
             Box(
                 Modifier
                     .fillMaxWidth()
                     .height(headerHeight)
                     .align(Alignment.TopStart)
             ) {
-                TopWaves(Modifier.fillMaxSize())
+                TopWavesRegistro(Modifier.fillMaxSize())
 
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
                         .padding(start = 12.dp, top = 12.dp)
-                        .size(50.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(Cocoa.copy(alpha = 0.9f))
                         .border(2.dp, Terracotta, CircleShape)
@@ -135,55 +123,39 @@ fun LoginScreenUI(
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(top = headerHeight)      // deja el header arriba
-                    .padding(horizontal = 30.dp),      // padding SOLO para el contenido
+                    .padding(top = headerHeight)
+                    .padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "Inicia\nSesión",
+                    "¿Primera vez?",
                     color = Graphite,
                     style = TextStyle(
                         fontFamily = InriaSans,
                         fontWeight = FontWeight.Normal,
                         fontSize = 50.sp,
-                        lineHeight = 52.sp,
+                        lineHeight = 42.sp,
                         textAlign = TextAlign.Center
                     )
                 )
 
-                Spacer(Modifier.height(15.dp))
-
-
-                // Logo
-                Box(
-                    modifier = Modifier.size(220.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(190.dp)
-                            .clip(CircleShape)
-                            .border(3.dp, Cocoa, CircleShape)
-                    )
-
-                    // Logo más grande y libre
-                    Image(
-                        painter = painterResource(id = R.drawable.logo),
-                        contentDescription = "Logo",
-                        modifier = Modifier
-                            .size(990.dp)
-                            .clip(RoundedCornerShape(5000.dp))
-                            .border(3.dp, Cocoa, RoundedCornerShape(200.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-
-                }
-
                 Spacer(Modifier.height(8.dp))
 
+                Image(
+                    painter = painterResource(heroImage),
+                    contentDescription = "Hero",
+                    modifier = Modifier
+                        .height(140.dp)
+                        .fillMaxWidth(0.7f),
+                    contentScale = ContentScale.Fit
+                )
+
+                Spacer(Modifier.height(6.dp))
+
+                // Nombre de usuario
                 OutlinedTextField(
-                    value = email,
-                    onValueChange = onEmailChange,
+                    value = nombre,
+                    onValueChange = onNombreChange,
                     singleLine = true,
                     textStyle = TextStyle(
                         fontFamily = InriaSans,
@@ -192,11 +164,11 @@ fun LoginScreenUI(
                     ),
                     label = {
                         Text(
-                            "Usuario",
+                            "Nombre de Usuario",
                             style = TextStyle(
                                 fontFamily = InriaSans,
                                 fontWeight = FontWeight.Normal,
-                                fontSize = 20.sp
+                                fontSize = 18.sp
                             )
                         )
                     },
@@ -212,7 +184,43 @@ fun LoginScreenUI(
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.height(12.dp))
+
+                Spacer(Modifier.height(10.dp))
+
+                // Correo
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = onEmailChange,
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        fontFamily = InriaSans,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 20.sp
+                    ),
+                    label = {
+                        Text(
+                            "Correo Electrónico",
+                            style = TextStyle(
+                                fontFamily = InriaSans,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 18.sp
+                            )
+                        )
+                    },
+                    shape = RoundedCornerShape(22.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Graphite,
+                        unfocusedTextColor = Graphite,
+                        focusedLabelColor = Cocoa,
+                        unfocusedLabelColor = Cocoa.copy(alpha = .9f),
+                        cursorColor = Cocoa,
+                        focusedBorderColor = Cocoa,
+                        unfocusedBorderColor = Terracotta
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(10.dp))
 
                 OutlinedTextField(
                     value = password,
@@ -229,7 +237,7 @@ fun LoginScreenUI(
                             style = TextStyle(
                                 fontFamily = InriaSans,
                                 fontWeight = FontWeight.Normal,
-                                fontSize = 20.sp
+                                fontSize = 18.sp
                             )
                         )
                     },
@@ -247,16 +255,46 @@ fun LoginScreenUI(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(3.dp))
+                Spacer(Modifier.height(10.dp))
 
-                TextButton(onClick = onForgotClick, modifier = Modifier.align(Alignment.Start)) {
-                    Text("¿Olvidaste tu contraseña?", color = Cocoa, fontFamily = InriaSans,
-                        fontWeight = FontWeight.Normal, fontSize = 17.sp)
-                }
-                Spacer(Modifier.height(8.dp))
+                // Confirmar contraseña
+                OutlinedTextField(
+                    value = confirm,
+                    onValueChange = onConfirmChange,
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        fontFamily = InriaSans,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 20.sp
+                    ),
+                    label = {
+                        Text(
+                            "Confirmar contraseña",
+                            style = TextStyle(
+                                fontFamily = InriaSans,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 18.sp
+                            )
+                        )
+                    },
+                    visualTransformation = PasswordVisualTransformation(),
+                    shape = RoundedCornerShape(22.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Graphite,
+                        unfocusedTextColor = Graphite,
+                        focusedLabelColor = Cocoa,
+                        unfocusedLabelColor = Cocoa.copy(alpha = .9f),
+                        cursorColor = Cocoa,
+                        focusedBorderColor = Cocoa,
+                        unfocusedBorderColor = Terracotta
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(14.dp))
 
                 Button(
-                    onClick = onLoginClick,
+                    onClick = onRegisterClick,
                     shape = RoundedCornerShape(26.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Terracotta,
@@ -277,25 +315,24 @@ fun LoginScreenUI(
                             "Ingresar",
                             fontFamily = InriaSans,
                             fontWeight = FontWeight.Light,
-                            fontSize = 22.sp,
-                            color = Graphite
+                            fontSize = 22.sp
                         )
                     }
-
                 }
+
                 Spacer(Modifier.height(16.dp))
 
-                TextButton(onClick = onRegisterClick) {
+                TextButton(onClick = onHaveAccountClick) {
                     Text(
-                        "¿No tienes una cuenta?",
+                        "Ya tienes una cuenta?",
                         color = Cocoa,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Normal,
                         fontFamily = InriaSans
                     )
                 }
-                Spacer(Modifier.height(24.dp))
 
+                Spacer(Modifier.height(18.dp))
             }
         }
     }
