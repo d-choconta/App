@@ -7,8 +7,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
@@ -31,14 +33,14 @@ import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
 import com.decoraia.app.ui.theme.MuseoModerno
 
-
+/* Paleta */
 private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val TerracottaDark = Color(0xFFCF8A57)
 private val Cocoa = Color(0xFFB2754E)
 private val Graphite = Color(0xFF2D2A26)
 
-/* Header con ondas */
+/* Header a todo el ancho */
 @Composable
 private fun TopWaves(modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
@@ -46,20 +48,14 @@ private fun TopWaves(modifier: Modifier = Modifier) {
         val h = size.height
 
         val terracotta = Path().apply {
-            moveTo(0f, 0f)
-            lineTo(w * 0.48f, 0f)
-            cubicTo(
-                w * 0.10f, h * 0.20f,
-                w * 0.12f, h * 0.50f,
-                0f,        h * 0.70f
-            )
+            moveTo(0f, 0f); lineTo(w * 0.48f, 0f)
+            cubicTo(w * 0.10f, h * 0.20f, w * 0.12f, h * 0.50f, 0f, h * 0.70f)
             lineTo(0f, h); lineTo(0f, 0f); close()
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
         val cocoa = Path().apply {
-            moveTo(w * 0.45f, 0f)
-            lineTo(w, 0f); lineTo(w, h * 0.95f)
+            moveTo(w * 0.45f, 0f); lineTo(w, 0f); lineTo(w, h * 0.95f)
             cubicTo(w * 0.92f, h * 0.55f, w * 0.78f, h * 0.30f, w * 0.70f, 0f)
             close()
         }
@@ -67,8 +63,9 @@ private fun TopWaves(modifier: Modifier = Modifier) {
     }
 }
 
+/* Tarjeta full-bleed: imagen + overlay + título (sin márgenes) */
 @Composable
-private fun FeatureCard(
+private fun FullBleedCard(
     @DrawableRes imageRes: Int,
     title: String,
     modifier: Modifier = Modifier,
@@ -76,21 +73,20 @@ private fun FeatureCard(
 ) {
     Box(
         modifier
-            .clip(RoundedCornerShape(22.dp))
-            .background(Terracotta.copy(alpha = 0.25f))
             .clickable { onClick() }
+            .fillMaxWidth()
+            .aspectRatio(16f / 9f)           // alto proporcional, ocupa TODO el ancho
     ) {
         Image(
             painter = painterResource(imageRes),
             contentDescription = title,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.matchParentSize(),
             contentScale = ContentScale.Crop
         )
-        // overlay
         Box(
             Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.25f))
+                .matchParentSize()
+                .background(Color.Black.copy(alpha = 0.30f))
         )
         Text(
             text = title,
@@ -106,7 +102,7 @@ private fun FeatureCard(
     }
 }
 
-/* ----------- UI PRINCIPAL ----------- */
+/* ----------- UI PRINCIPAL (FULL WIDTH) ----------- */
 @Composable
 fun PrincipalScreenUI(
     onGoIA: () -> Unit,
@@ -117,23 +113,23 @@ fun PrincipalScreenUI(
     @DrawableRes raImage: Int = R.drawable.ra_banner
 ) {
     Surface(color = Cream) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 18.dp)
-        ) {
-            // Header
+        Box(Modifier.fillMaxSize()) {
+
+            val headerHeight = 240.dp
+
+            // Header sin padding lateral (full-bleed real)
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(170.dp)
+                    .height(headerHeight)
+                    .align(Alignment.TopStart)
             ) {
                 TopWaves(Modifier.fillMaxSize())
 
                 Column(
                     Modifier
                         .fillMaxSize()
-                        .padding(top = 18.dp, start = 8.dp, end = 8.dp),
+                        .padding(top = 16.dp, start = 16.dp, end = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Bottom
                 ) {
@@ -143,84 +139,92 @@ fun PrincipalScreenUI(
                         style = TextStyle(
                             fontFamily = MuseoModerno,
                             fontWeight = FontWeight.Light,
-                            fontSize = 42.sp,
+                            fontSize = 54.sp,
                             letterSpacing = 2.sp
                         )
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
                     Text(
                         "¿Cómo decorarás hoy?",
                         color = Graphite,
                         style = TextStyle(
                             fontFamily = InriaSans,
                             fontWeight = FontWeight.Normal,
-                            fontSize = 22.sp
+                            fontSize = 24.sp
                         )
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
-
-            FeatureCard(
-                imageRes = iaImage,
-                title = "IA",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(170.dp),
-            ) { onGoIA() }
-
-            Spacer(Modifier.height(16.dp))
-
-            FeatureCard(
-                imageRes = raImage,
-                title = "RA",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(170.dp),
-            ) { onGoRA() }
-
-            Spacer(Modifier.height(18.dp))
-
-
-            Row(
+            // Contenido full-bleed debajo del header (sin padding horizontal)
+            Column(
                 Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .padding(top = headerHeight)
             ) {
-                IconButton(
-                    onClick = onLogout,
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(Cocoa.copy(alpha = 0.9f))
-                        .border(2.dp, Terracotta, CircleShape)
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    Icon(
-                        Icons.Filled.ExitToApp,
-                        contentDescription = "Cerrar sesión",
-                        tint = Color.White
+                    // IA full width
+                    FullBleedCard(
+                        imageRes = iaImage,
+                        title = "IA",
+                        onClick = onGoIA
                     )
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // RA full width
+                    FullBleedCard(
+                        imageRes = raImage,
+                        title = "RA",
+                        onClick = onGoRA
+                    )
+
+                    Spacer(Modifier.height(16.dp))
                 }
 
-                IconButton(
-                    onClick = onGoPerfil,
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(Cocoa.copy(alpha = 0.9f))
-                        .border(2.dp, Terracotta, CircleShape)
+                // Barra inferior (puedes dejarla también full-bleed)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.Filled.Person,
-                        contentDescription = "Perfil",
-                        tint = Color.White
-                    )
+                    IconButton(
+                        onClick = onLogout,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(Cocoa.copy(alpha = 0.9f))
+                            .border(2.dp, Terracotta, CircleShape)
+                    ) {
+                        Icon(
+                            Icons.Filled.ExitToApp,
+                            contentDescription = "Cerrar sesión",
+                            tint = Color.White
+                        )
+                    }
+                    IconButton(
+                        onClick = onGoPerfil,
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(Cocoa.copy(alpha = 0.9f))
+                            .border(2.dp, Terracotta, CircleShape)
+                    ) {
+                        Icon(
+                            Icons.Filled.Person,
+                            contentDescription = "Perfil",
+                            tint = Color.White
+                        )
+                    }
                 }
+            }
             }
         }
-    }
 }
