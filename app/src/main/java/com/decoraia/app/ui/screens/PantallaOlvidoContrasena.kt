@@ -1,52 +1,51 @@
 ﻿package com.decoraia.app.ui.screens
 
-import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.decoraia.app.ui.components.OlvidoContrasenaUI
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 @Composable
 fun PantallaOlvidoContrasena(navController: NavController) {
-    val auth = FirebaseAuth.getInstance()
+    val auth = remember { FirebaseAuth.getInstance() }
+
+    var usuario by remember { mutableStateOf("") }   // visual (no se envía a Firebase)
     var email by remember { mutableStateOf("") }
-    var mensaje by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text("Recuperar contraseña", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(16.dp))
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Correo electrónico") },
-            modifier = Modifier.fillMaxWidth()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { _ ->
+        OlvidoContrasenaUI(
+            usuario = usuario,
+            onUsuarioChange = { usuario = it },
+            email = email,
+            onEmailChange = { email = it },
+            loading = loading,
+            onEnviarCodigo = {
+                if (email.isBlank()) {
+                    scope.launch { snackbarHostState.showSnackbar("Ingresa un correo válido") }
+                    return@OlvidoContrasenaUI
+                }
+                loading = true
+                auth.sendPasswordResetEmail(email)
+                    .addOnSuccessListener {
+                        loading = false
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Correo de recuperación enviado")
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        loading = false
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Error: ${e.message}")
+                        }
+                    }
+            },
+            onBack = { navController.popBackStack() }
         )
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = {
-            auth.sendPasswordResetEmail(email)
-                .addOnSuccessListener { mensaje = "Correo de recuperación enviado" }
-                .addOnFailureListener { mensaje = "Error: ${'$'}{it.message}" }
-        }, modifier = Modifier.fillMaxWidth()) {
-            Text("Enviar correo")
-        }
-
-        mensaje?.let {
-            Spacer(Modifier.height(10.dp))
-            Text(it, color = MaterialTheme.colorScheme.secondary)
-        }
-
-        Spacer(Modifier.height(16.dp))
-        TextButton(onClick = { navController.navigate("login") }) {
-            Text("Volver al inicio de sesión")
-        }
     }
 }
