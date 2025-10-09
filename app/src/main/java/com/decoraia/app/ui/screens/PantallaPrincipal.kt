@@ -24,6 +24,7 @@ fun PantallaPrincipal(navController: NavHostController) {
             navController.navigate("inicio") {
                 popUpTo("principal") { inclusive = true }
             }
-        },
-    )
+            },
+
+        )
 }

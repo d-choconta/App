@@ -14,7 +14,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,7 +43,7 @@ private val TerracottaDark = Color(0xFFCF8A57)
 private val Cocoa = Color(0xFFB2754E)
 private val Graphite = Color(0xFF2D2A26)
 
-/* Header a todo el ancho */
+
 @Composable
 private fun TopWaves(modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
@@ -48,24 +51,25 @@ private fun TopWaves(modifier: Modifier = Modifier) {
         val h = size.height
 
         val terracotta = Path().apply {
-            moveTo(0f, 0f); lineTo(w * 0.48f, 0f)
-            cubicTo(w * 0.10f, h * 0.20f, w * 0.12f, h * 0.50f, 0f, h * 0.70f)
-            lineTo(0f, h); lineTo(0f, 0f); close()
+            moveTo(5f, 0f); lineTo(w * 0.5f, 1f)
+            cubicTo(w * 0.30f, h * 0.10f, w * 0.9f, h * 0.2f, -700f, h * 1f)
+            lineTo(1f, h); lineTo(0f, 30f); close()
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
         val cocoa = Path().apply {
-            moveTo(w * 0.45f, 0f); lineTo(w, 0f); lineTo(w, h * 0.95f)
-            cubicTo(w * 0.92f, h * 0.55f, w * 0.78f, h * 0.30f, w * 0.70f, 0f)
+            moveTo(w * 23f, 0f); lineTo(w, w*4f); lineTo(w, h * 1f)
+            cubicTo(w * 0.22f, h * 0.55f, w * 0.78f, h * 0.30f, w * 0.70f, 0f)
             close()
         }
         drawPath(cocoa, Cocoa.copy(alpha = 0.30f), style = Fill)
     }
 }
 
-/* Tarjeta full-bleed: imagen + overlay + título (sin márgenes) */
 @Composable
-private fun FullBleedCard(
+private fun FramedCard(
+    frameColor: Color,
+    showBorder: Boolean = false,
     @DrawableRes imageRes: Int,
     title: String,
     modifier: Modifier = Modifier,
@@ -73,36 +77,43 @@ private fun FullBleedCard(
 ) {
     Box(
         modifier
-            .clickable { onClick() }
-            .fillMaxWidth()
-            .aspectRatio(16f / 9f)           // alto proporcional, ocupa TODO el ancho
+            .clip(RoundedCornerShape(24.dp))
+            .background(frameColor)
+            .then(if (showBorder) Modifier.border(2.dp, Terracotta, RoundedCornerShape(24.dp)) else Modifier)
+            .padding(20.dp)
     ) {
-        Image(
-            painter = painterResource(imageRes),
-            contentDescription = title,
-            modifier = Modifier.matchParentSize(),
-            contentScale = ContentScale.Crop
-        )
         Box(
             Modifier
-                .matchParentSize()
-                .background(Color.Black.copy(alpha = 0.30f))
-        )
-        Text(
-            text = title,
-            color = Color.White,
-            style = TextStyle(
-                fontFamily = InriaSans,
-                fontWeight = FontWeight.Bold,
-                fontSize = 36.sp,
-                textAlign = TextAlign.Center
-            ),
-            modifier = Modifier.align(Alignment.Center)
-        )
+                .clip(RoundedCornerShape(20.dp))
+                .clickable { onClick() }
+        ) {
+            Image(
+                painter = painterResource(imageRes),
+                contentDescription = title,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.30f))
+            )
+            Text(
+                text = title,
+                color = Color.White,
+                style = TextStyle(
+                    fontFamily = InriaSans,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 36.sp,
+                    textAlign = TextAlign.Center
+                ),
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
     }
 }
 
-/* ----------- UI PRINCIPAL (FULL WIDTH) ----------- */
+/* ----------- UI PRINCIPAL ----------- */
 @Composable
 fun PrincipalScreenUI(
     onGoIA: () -> Unit,
@@ -115,9 +126,8 @@ fun PrincipalScreenUI(
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
 
-            val headerHeight = 240.dp
+            val headerHeight = 260.dp
 
-            // Header sin padding lateral (full-bleed real)
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -139,7 +149,7 @@ fun PrincipalScreenUI(
                         style = TextStyle(
                             fontFamily = MuseoModerno,
                             fontWeight = FontWeight.Light,
-                            fontSize = 54.sp,
+                            fontSize = 55.sp,
                             letterSpacing = 2.sp
                         )
                     )
@@ -150,14 +160,13 @@ fun PrincipalScreenUI(
                         style = TextStyle(
                             fontFamily = InriaSans,
                             fontWeight = FontWeight.Normal,
-                            fontSize = 24.sp
+                            fontSize = 25.sp
                         )
                     )
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(30.dp))
                 }
             }
 
-            // Contenido full-bleed debajo del header (sin padding horizontal)
             Column(
                 Modifier
                     .fillMaxSize()
@@ -168,37 +177,47 @@ fun PrincipalScreenUI(
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // IA full width
-                    FullBleedCard(
+                    // IA — marco terracota
+                    FramedCard(
+                        frameColor = Terracotta.copy(alpha = 0.70f),
+                        showBorder = false,
                         imageRes = iaImage,
                         title = "IA",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f),
                         onClick = onGoIA
                     )
 
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(-10.dp))
 
-                    // RA full width
-                    FullBleedCard(
+                    // RA — marco crema con borde terracota
+                    FramedCard(
+                        frameColor = Cream,
+                        showBorder = false,
                         imageRes = raImage,
                         title = "RA",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f),
                         onClick = onGoRA
                     )
 
                     Spacer(Modifier.height(16.dp))
                 }
 
-                // Barra inferior (puedes dejarla también full-bleed)
+                // Barra inferior con iconos más grandes
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
                         onClick = onLogout,
                         modifier = Modifier
-                            .size(56.dp)
+                            .size(72.dp)
                             .clip(CircleShape)
                             .background(Cocoa.copy(alpha = 0.9f))
                             .border(2.dp, Terracotta, CircleShape)
@@ -206,13 +225,14 @@ fun PrincipalScreenUI(
                         Icon(
                             Icons.Filled.ExitToApp,
                             contentDescription = "Cerrar sesión",
-                            tint = Color.White
+                            tint = Color.White,
+                            modifier = Modifier.size(36.dp) // icono interno grande
                         )
                     }
                     IconButton(
                         onClick = onGoPerfil,
                         modifier = Modifier
-                            .size(56.dp)
+                            .size(72.dp) // más grande
                             .clip(CircleShape)
                             .background(Cocoa.copy(alpha = 0.9f))
                             .border(2.dp, Terracotta, CircleShape)
@@ -220,7 +240,8 @@ fun PrincipalScreenUI(
                         Icon(
                             Icons.Filled.Person,
                             contentDescription = "Perfil",
-                            tint = Color.White
+                            tint = Color.White,
+                            modifier = Modifier.size(36.dp) // icono interno grande
                         )
                     }
                 }

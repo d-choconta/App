@@ -102,8 +102,8 @@ fun LoginScreenUI(
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
-                        .padding(start = 12.dp, top = 12.dp)
-                        .size(50.dp)
+                        .padding(start = 17.dp, top = 17.dp)
+                        .size(60.dp)
                         .clip(CircleShape)
                         .background(Cocoa.copy(alpha = 0.9f))
                         .border(2.dp, Terracotta, CircleShape)
@@ -279,6 +279,6 @@ fun LoginScreenUI(
                 Spacer(Modifier.height(24.dp))
 
             }
+            }
         }
-    }
 }

@@ -108,8 +108,8 @@ fun RegistroScreenUI(
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
-                        .padding(start = 12.dp, top = 12.dp)
-                        .size(50.dp)
+                        .padding(start = 17.dp, top = 17.dp)
+                        .size(52.dp)
                         .clip(CircleShape)
                         .background(Cocoa.copy(alpha = 0.9f))
                         .border(2.dp, Terracotta, CircleShape)
@@ -342,6 +342,6 @@ fun RegistroScreenUI(
 
                 Spacer(Modifier.height(18.dp))
             }
+            }
         }
-    }
 }
