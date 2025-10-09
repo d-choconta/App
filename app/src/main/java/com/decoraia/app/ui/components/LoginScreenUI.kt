@@ -41,33 +41,19 @@ private fun TopWaves(modifier: Modifier = Modifier) {
 
 
         val terracotta = Path().apply {
-            moveTo(0f, 0f)
-            lineTo(w * 0.48f, 0f)
-            cubicTo(
-                w * 0.10f, h * 0.20f,
-                w * 0.12f, h * 0.50f,
-                0f,        h * 0.70f
-            )
-            lineTo(0f, h)
-            lineTo(0f, 0f)
-            close()
+            moveTo(5f, 0f); lineTo(w * 0.5f, 1f)
+            cubicTo(w * 0.1f, h * 0.10f, w * 0.9f, h * 0.20f, -700f, h * 1f)
+            lineTo(1f, h); lineTo(0.1f, 30f); close()
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
 
         val cocoa = Path().apply {
-            moveTo(w * 0.45f, 0f)
-            lineTo(w, 0f)
-            lineTo(w, h * 0.95f)
-            cubicTo(
-                w * 0.92f, h * 0.55f,
-                w * 0.78f, h * 0.30f,
-                w * 0.70f, 0f
-            )
+            moveTo(w * 23f, 0f); lineTo(w, w*4f); lineTo(w, h * 1f)
+            cubicTo(w * 0.22f, h * 0.55f, w * 0.78f, h * 0.30f, w * 0.70f, 0f)
             close()
         }
-        drawPath(cocoa, Cocoa.copy(alpha = 0.3f), style = Fill)
-
+        drawPath(cocoa, Cocoa.copy(alpha = 0.3f),style=Fill)
     }
 }
 

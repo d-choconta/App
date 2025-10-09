@@ -206,7 +206,6 @@ fun PrincipalScreenUI(
                     Spacer(Modifier.height(16.dp))
                 }
 
-                // Barra inferior con iconos más grandes
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -226,13 +225,13 @@ fun PrincipalScreenUI(
                             Icons.Filled.ExitToApp,
                             contentDescription = "Cerrar sesión",
                             tint = Color.White,
-                            modifier = Modifier.size(36.dp) // icono interno grande
+                            modifier = Modifier.size(36.dp)
                         )
                     }
                     IconButton(
                         onClick = onGoPerfil,
                         modifier = Modifier
-                            .size(72.dp) // más grande
+                            .size(72.dp)
                             .clip(CircleShape)
                             .background(Cocoa.copy(alpha = 0.9f))
                             .border(2.dp, Terracotta, CircleShape)
@@ -241,7 +240,7 @@ fun PrincipalScreenUI(
                             Icons.Filled.Person,
                             contentDescription = "Perfil",
                             tint = Color.White,
-                            modifier = Modifier.size(36.dp) // icono interno grande
+                            modifier = Modifier.size(36.dp)
                         )
                     }
                 }

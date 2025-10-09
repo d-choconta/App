@@ -17,11 +17,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
+import com.decoraia.app.ui.theme.InriaSans
+import com.decoraia.app.ui.theme.MuseoModerno
 
 // Paleta
 private val Cream = Color(0xFFFBF3E3)
@@ -39,11 +42,9 @@ fun OlvidoContrasenaUI(
     onEnviarCodigo: () -> Unit,
     onBack: () -> Unit
 ) {
-    // Fondo NEUTRO (sin imagen de fondo)
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
 
-            // Flecha atrás
             IconButton(
                 onClick = onBack,
                 modifier = Modifier
@@ -69,24 +70,36 @@ fun OlvidoContrasenaUI(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    "¿Olvidaste tu\ncontraseña?",
+                    "¿Olvidaste tu",
                     color = Graphite,
                     style = TextStyle(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 34.sp,
-                        lineHeight = 36.sp,
+                        fontFamily = InriaSans,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 50.sp,
+                        lineHeight = 42.sp,
+                        textAlign = TextAlign.Center
+                    )
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "contraseña?",
+                    color = Graphite,
+                    style = TextStyle(
+                        fontFamily = InriaSans,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 50.sp,
+                        lineHeight = 42.sp,
                         textAlign = TextAlign.Center
                     )
                 )
 
                 Spacer(Modifier.height(16.dp))
 
-                // Imagen dentro del círculo (sin borde), usando olvidocontrasena.jpg
                 Image(
                     painter = painterResource(id = R.drawable.olvidocontrasena),
                     contentDescription = "Olvido contraseña",
                     modifier = Modifier
-                        .size(140.dp)
+                        .size(240.dp)
                         .clip(CircleShape)
                         .shadow(6.dp, CircleShape, clip = true),
                     contentScale = ContentScale.Crop
@@ -99,8 +112,13 @@ fun OlvidoContrasenaUI(
                     value = usuario,
                     onValueChange = onUsuarioChange,
                     singleLine = true,
-                    label = { Text("Usuario") },
-                    textStyle = LocalTextStyle.current.copy(fontSize = 18.sp),
+                    label = { Text("Usuario",
+                        style = TextStyle(
+                            fontFamily = InriaSans,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = 20.sp)
+                        ) },
+                    textStyle = LocalTextStyle.current.copy(fontSize = 20.sp),
                     shape = RoundedCornerShape(22.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Graphite,
@@ -111,6 +129,7 @@ fun OlvidoContrasenaUI(
                         focusedBorderColor = Cocoa,
                         unfocusedBorderColor = Terracotta
                     ),
+
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -121,8 +140,13 @@ fun OlvidoContrasenaUI(
                     value = email,
                     onValueChange = onEmailChange,
                     singleLine = true,
-                    label = { Text("Correo electrónico") },
-                    textStyle = LocalTextStyle.current.copy(fontSize = 18.sp),
+                    label = { Text("Correo electrónico",
+                            style = TextStyle(
+                                fontFamily = InriaSans,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 20.sp)
+                        ) },
+                    textStyle = LocalTextStyle.current.copy(fontSize = 20.sp),
                     shape = RoundedCornerShape(22.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Graphite,
@@ -138,7 +162,6 @@ fun OlvidoContrasenaUI(
 
                 Spacer(Modifier.height(18.dp))
 
-                // Botón Enviar Código
                 Button(
                     onClick = onEnviarCodigo,
                     shape = RoundedCornerShape(26.dp),
@@ -158,7 +181,7 @@ fun OlvidoContrasenaUI(
                             color = Graphite
                         )
                     } else {
-                        Text("Enviar Código", fontSize = 20.sp, fontWeight = FontWeight.Medium)
+                        Text("Enviar Código", fontSize = 22.sp, fontFamily = InriaSans,fontWeight = FontWeight.Normal)
                     }
                 }
             }

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
+import com.decoraia.app.ui.theme.InriaSans
 import com.decoraia.app.ui.theme.MuseoModerno
 
 private val Cream = Color(0xFFFBF3E3)
@@ -99,12 +100,18 @@ fun InicioScreenUI(
             ) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Iniciar Sesión")
+                Text(
+                    "Iniciar Sesión",
+                    fontFamily = InriaSans,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 20.sp,
+                    color = Graphite
+                )
             }
 
             Spacer(Modifier.height(12.dp))
 
-            // Botón 2 (blanco)
+            // Botón 2
             Button(
                 onClick = onRegistroClick,
                 colors = ButtonDefaults.buttonColors(
@@ -118,7 +125,13 @@ fun InicioScreenUI(
             ) {
                 Icon(Icons.Filled.Search, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Empecemos")
+                Text(
+                    "Empecemos",
+                    fontFamily = InriaSans,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 20.sp,
+                    color = Graphite
+                )
             }
 
             Spacer(Modifier.weight(0.45f))
