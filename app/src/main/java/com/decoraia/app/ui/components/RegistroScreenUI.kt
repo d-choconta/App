@@ -24,12 +24,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
 
-/* Paleta consistente con Login */
 private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val TerracottaDark = Color(0xFFCF8A57)
@@ -42,12 +42,12 @@ private fun TopWavesRegistro(modifier: Modifier = Modifier) {
         val w = size.width
         val h = size.height
 
-        // parche terracota izquierdo (grande)
+        //izquierdo
         val terracotta = Path().apply {
             moveTo(0f, 0f)
             lineTo(w * 0.48f, 0f)
             cubicTo(
-                w * 0.10f, h * 0.20f,
+                w * 0.10f, h * 0.0f,
                 w * 0.12f, h * 0.50f,
                 0f,        h * 0.70f
             )
@@ -57,7 +57,7 @@ private fun TopWavesRegistro(modifier: Modifier = Modifier) {
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
-        // parche cocoa derecho
+        //derecho
         val cocoa = Path().apply {
             moveTo(w * 0.45f, 0f)
             lineTo(w, 0f)
@@ -73,7 +73,7 @@ private fun TopWavesRegistro(modifier: Modifier = Modifier) {
     }
 }
 
-/* ----------- UI de Registro (sin lógica) ----------- */
+/* ----------- UI de Registro ----------- */
 @Composable
 fun RegistroScreenUI(
     nombre: String,
@@ -88,12 +88,16 @@ fun RegistroScreenUI(
     onRegisterClick: () -> Unit,
     onBack: () -> Unit,
     onHaveAccountClick: () -> Unit,
-    @DrawableRes heroImage: Int = R.drawable.logo // pon aquí tu personaje si lo tienes en drawable
+    @DrawableRes heroImage: Int = R.drawable.registro,
+
+    titleYOffset: Dp = (-10).dp,
+    heroHeight: Dp = 280.dp,
+    heroWidthFraction: Float = 0.80f
 ) {
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
+            val headerHeight = 60.dp
 
-            val headerHeight = 140.dp
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -101,12 +105,11 @@ fun RegistroScreenUI(
                     .align(Alignment.TopStart)
             ) {
                 TopWavesRegistro(Modifier.fillMaxSize())
-
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
                         .padding(start = 12.dp, top = 12.dp)
-                        .size(48.dp)
+                        .size(50.dp)
                         .clip(CircleShape)
                         .background(Cocoa.copy(alpha = 0.9f))
                         .border(2.dp, Terracotta, CircleShape)
@@ -127,6 +130,7 @@ fun RegistroScreenUI(
                     .padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+
                 Text(
                     "¿Primera vez?",
                     color = Graphite,
@@ -136,23 +140,26 @@ fun RegistroScreenUI(
                         fontSize = 50.sp,
                         lineHeight = 42.sp,
                         textAlign = TextAlign.Center
-                    )
+                    ),
+                    modifier = Modifier.offset(y = titleYOffset)
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(0.dp))
+
 
                 Image(
                     painter = painterResource(heroImage),
-                    contentDescription = "Hero",
+                    contentDescription = "Registro",
                     modifier = Modifier
-                        .height(140.dp)
-                        .fillMaxWidth(0.7f),
+                        .height(heroHeight)
+                        .fillMaxWidth(heroWidthFraction),
                     contentScale = ContentScale.Fit
                 )
 
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(0.dp))
 
-                // Nombre de usuario
+
+                // Nombre
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = onNombreChange,
@@ -222,6 +229,7 @@ fun RegistroScreenUI(
 
                 Spacer(Modifier.height(10.dp))
 
+                // Contraseña
                 OutlinedTextField(
                     value = password,
                     onValueChange = onPasswordChange,
@@ -312,7 +320,7 @@ fun RegistroScreenUI(
                         )
                     } else {
                         Text(
-                            "Ingresar",
+                            "Registrar",
                             fontFamily = InriaSans,
                             fontWeight = FontWeight.Light,
                             fontSize = 22.sp
@@ -324,7 +332,7 @@ fun RegistroScreenUI(
 
                 TextButton(onClick = onHaveAccountClick) {
                     Text(
-                        "Ya tienes una cuenta?",
+                        "¿Ya tienes una cuenta?",
                         color = Cocoa,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Normal,

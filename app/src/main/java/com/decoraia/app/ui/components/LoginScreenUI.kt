@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
 
-/* ---- Paleta ---- */
 private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val TerracottaDark = Color(0xFFCF8A57)
@@ -43,11 +42,11 @@ private fun TopWaves(modifier: Modifier = Modifier) {
 
         val terracotta = Path().apply {
             moveTo(0f, 0f)
-            lineTo(w * 0.48f, 0f) // cuello superior más ancho
+            lineTo(w * 0.48f, 0f)
             cubicTo(
-                w * 0.10f, h * 0.20f,   // curva entra hacia adentro
-                w * 0.12f, h * 0.50f,   // baja fuerte
-                0f,        h * 0.70f    // termina mucho más abajo
+                w * 0.10f, h * 0.20f,
+                w * 0.12f, h * 0.50f,
+                0f,        h * 0.70f
             )
             lineTo(0f, h)
             lineTo(0f, 0f)
@@ -55,34 +54,20 @@ private fun TopWaves(modifier: Modifier = Modifier) {
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
-        // Onda cocoa derecha (más ancha y con curva hacia abajo)
+
         val cocoa = Path().apply {
             moveTo(w * 0.45f, 0f)
             lineTo(w, 0f)
             lineTo(w, h * 0.95f)
             cubicTo(
-                w * 0.92f, h * 0.55f,   // curva suave hacia adentro
-                w * 0.78f, h * 0.30f,   // sube un poco
-                w * 0.70f, 0f           // vuelve arriba
+                w * 0.92f, h * 0.55f,
+                w * 0.78f, h * 0.30f,
+                w * 0.70f, 0f
             )
             close()
         }
         drawPath(cocoa, Cocoa.copy(alpha = 0.3f), style = Fill)
 
-        // Línea negra siguiendo la forma
-        val stroke = Path().apply {
-            moveTo(w * 0.28f, 0f)
-            cubicTo(
-                w * 0.10f, h * 0.20f,
-                w * 0.12f, h * 0.50f,
-                0f,        h * 0.70f
-            )
-        }
-        drawPath(
-            stroke,
-            Graphite.copy(alpha = 0.9f),
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
-        )
     }
 }
 
@@ -135,8 +120,8 @@ fun LoginScreenUI(
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(top = headerHeight)      // deja el header arriba
-                    .padding(horizontal = 30.dp),      // padding SOLO para el contenido
+                    .padding(top = headerHeight)
+                    .padding(horizontal = 30.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -161,19 +146,16 @@ fun LoginScreenUI(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(190.dp)
+                            .size(300.dp)
                             .clip(CircleShape)
                             .border(3.dp, Cocoa, CircleShape)
                     )
 
-                    // Logo más grande y libre
                     Image(
                         painter = painterResource(id = R.drawable.logo),
                         contentDescription = "Logo",
                         modifier = Modifier
-                            .size(990.dp)
-                            .clip(RoundedCornerShape(5000.dp))
-                            .border(3.dp, Cocoa, RoundedCornerShape(200.dp)),
+                            .size(170.dp),
                         contentScale = ContentScale.Crop
                     )
 

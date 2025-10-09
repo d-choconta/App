@@ -45,7 +45,7 @@ fun PantallaOlvidoContrasena(navController: NavController) {
         }
 
         Spacer(Modifier.height(16.dp))
-        TextButton(onClick = { navController.navigate("pantallaLogin") }) {
+        TextButton(onClick = { navController.navigate("login") }) {
             Text("Volver al inicio de sesión")
         }
     }

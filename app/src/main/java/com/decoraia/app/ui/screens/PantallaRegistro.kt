@@ -40,11 +40,12 @@ fun PantallaRegistro(navController: NavHostController) {
             loading = loading,
 
             onBack = { navController.popBackStack() },
+            onHaveAccountClick = {
+                navController.navigate("login") {
+                    popUpTo("registro") { inclusive = true }
+                }
+            },
 
-
-            onHaveAccountClick = { navController.popBackStack() },
-
-            // 📝 Registrar
             onRegisterClick = {
                 if (nombre.isBlank() || email.isBlank() || password.isBlank() || confirm.isBlank()) {
                     scope.launch { snackbar.showSnackbar("Completa todos los campos") }
