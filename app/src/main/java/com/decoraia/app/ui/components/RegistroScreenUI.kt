@@ -42,34 +42,50 @@ private fun TopWavesRegistro(modifier: Modifier = Modifier) {
         val w = size.width
         val h = size.height
 
-        //izquierdo
+
         val terracotta = Path().apply {
             moveTo(0f, 0f)
-            lineTo(w * 0.48f, 0f)
+            lineTo(w * 0.50f, 0f)
+
             cubicTo(
-                w * 0.10f, h * 0.0f,
-                w * 0.12f, h * 0.50f,
-                0f,        h * 0.70f
+                w * 0.40f, h * 1f,
+                w * 0.1f, h * 1f,
+                w * 0.19f, h * 1f
             )
-            lineTo(0f, h)
+
+            cubicTo(
+                w * 0.06f, h * 1f,
+                w * 0.2f, h * 3f,
+                0f,       h * 3.9f
+            )
+
             lineTo(0f, 0f)
             close()
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
-        //derecho
         val cocoa = Path().apply {
-            moveTo(w * 0.45f, 0f)
-            lineTo(w, 0f)
-            lineTo(w, h * 0.95f)
+            moveTo(w, 0f)
+            lineTo(w * 0.50f, 0f)
+
+
             cubicTo(
-                w * 0.92f, h * 0.55f,
-                w * 0.78f, h * 0.30f,
-                w * 0.70f, 0f
+                w * 0.60f, h * 1f,
+                w * 0.9f,  h * 1f,
+                w * 0.81f, h * 1f
             )
+
+
+            cubicTo(
+                w * 0.94f, h * 1f,
+                w * 0.80f, h * 3f,
+                w,        h * 3.9f
+            )
+
+            lineTo(w, 0f)
             close()
         }
-        drawPath(cocoa, Cocoa.copy(alpha = 0.3f), style = Fill)
+        drawPath(cocoa, Cocoa.copy(alpha = 0.30f), style = Fill)
     }
 }
 
@@ -96,7 +112,7 @@ fun RegistroScreenUI(
 ) {
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
-            val headerHeight = 60.dp
+            val headerHeight = 70.dp
 
             Box(
                 Modifier
@@ -126,7 +142,7 @@ fun RegistroScreenUI(
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(top = headerHeight)
+                    .padding(top = 80.dp)
                     .padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -156,7 +172,7 @@ fun RegistroScreenUI(
                     contentScale = ContentScale.Fit
                 )
 
-                Spacer(Modifier.height(0.dp))
+                Spacer(Modifier.height(-2.dp))
 
 
                 // Nombre
@@ -175,7 +191,7 @@ fun RegistroScreenUI(
                             style = TextStyle(
                                 fontFamily = InriaSans,
                                 fontWeight = FontWeight.Normal,
-                                fontSize = 18.sp
+                                fontSize = 19.sp
                             )
                         )
                     },
@@ -192,7 +208,7 @@ fun RegistroScreenUI(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
 
                 // Correo
                 OutlinedTextField(
@@ -210,7 +226,7 @@ fun RegistroScreenUI(
                             style = TextStyle(
                                 fontFamily = InriaSans,
                                 fontWeight = FontWeight.Normal,
-                                fontSize = 18.sp
+                                fontSize = 19.sp
                             )
                         )
                     },
@@ -227,7 +243,7 @@ fun RegistroScreenUI(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
 
                 // Contraseña
                 OutlinedTextField(
@@ -245,7 +261,7 @@ fun RegistroScreenUI(
                             style = TextStyle(
                                 fontFamily = InriaSans,
                                 fontWeight = FontWeight.Normal,
-                                fontSize = 18.sp
+                                fontSize = 19.sp
                             )
                         )
                     },
@@ -263,7 +279,7 @@ fun RegistroScreenUI(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
 
                 // Confirmar contraseña
                 OutlinedTextField(
@@ -281,7 +297,7 @@ fun RegistroScreenUI(
                             style = TextStyle(
                                 fontFamily = InriaSans,
                                 fontWeight = FontWeight.Normal,
-                                fontSize = 18.sp
+                                fontSize = 19.sp
                             )
                         )
                     },
@@ -299,7 +315,7 @@ fun RegistroScreenUI(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(15.dp))
 
                 Button(
                     onClick = onRegisterClick,
@@ -328,7 +344,7 @@ fun RegistroScreenUI(
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(8.dp))
 
                 TextButton(onClick = onHaveAccountClick) {
                     Text(
@@ -340,7 +356,7 @@ fun RegistroScreenUI(
                     )
                 }
 
-                Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(15.dp))
             }
             }
         }

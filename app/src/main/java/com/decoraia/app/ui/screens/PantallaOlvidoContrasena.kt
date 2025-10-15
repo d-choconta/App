@@ -31,11 +31,13 @@ fun PantallaOlvidoContrasena(navController: NavController) {
                     return@OlvidoContrasenaUI
                 }
                 loading = true
-                auth.sendPasswordResetEmail(email)
+                FirebaseAuth.getInstance().sendPasswordResetEmail(email)
                     .addOnSuccessListener {
                         loading = false
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Correo de recuperación enviado")
+                        scope.launch { snackbarHostState.showSnackbar("Correo de recuperación enviado") }
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                            launchSingleTop = true
                         }
                     }
                     .addOnFailureListener { e ->

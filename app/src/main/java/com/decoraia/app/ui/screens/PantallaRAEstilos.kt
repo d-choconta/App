@@ -1,52 +1,25 @@
 ﻿package com.decoraia.app.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import com.google.firebase.firestore.FirebaseFirestore
+import android.net.Uri
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.navigation.NavHostController
+import com.decoraia.app.ui.components.RAEstilosScreenUI
 
 @Composable
-fun PantallaRAEstilos(navController: NavController) {
-    val db = FirebaseFirestore.getInstance()
-    var estilos by remember { mutableStateOf(listOf<String>()) }
-    var selected by remember { mutableStateOf(setOf<String>()) }
-
-    LaunchedEffect(Unit) {
-        db.collection("raEstilos").get()
-            .addOnSuccessListener { snap ->
-                estilos = snap.documents.mapNotNull { it.getString("nombre") }
-            }
+fun PantallaRAEstilos(nav: NavHostController) {
+    val estilos = remember {
+        listOf("Clásico", "Mediterráneo", "Minimalista", "Industrial")
     }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Estilos RA", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(12.dp))
-        LazyColumn {
-            items(estilos.size) { idx ->
-                val estilo = estilos[idx]
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .toggleable(value = selected.contains(estilo), onValueChange = {
-                            selected = if (selected.contains(estilo)) selected - estilo else selected + estilo
-                        }),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(estilo)
-                    Checkbox(checked = selected.contains(estilo), onCheckedChange = null)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
-        Button(onClick = { /* aplicar estilos seleccionados en la escena RA */ }, modifier = Modifier.fillMaxWidth()) {
-            Text("Aplicar estilos")
-        }
-    }
+    RAEstilosScreenUI(
+        estilos = estilos,
+        onBack = { nav.popBackStack() },
+        onSelectStyle = { estilo ->
+            val encoded = Uri.encode(estilo)
+            nav.navigate("raobjetos/$encoded")
+        },
+        onHome = { nav.navigate("principal") { popUpTo("principal") { inclusive = true } } },
+        onProfile = { nav.navigate("perfil") }
+    )
 }

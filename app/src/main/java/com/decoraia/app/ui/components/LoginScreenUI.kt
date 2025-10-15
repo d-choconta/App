@@ -41,19 +41,47 @@ private fun TopWaves(modifier: Modifier = Modifier) {
 
 
         val terracotta = Path().apply {
-            moveTo(5f, 0f); lineTo(w * 0.5f, 1f)
-            cubicTo(w * 0.1f, h * 0.10f, w * 0.9f, h * 0.20f, -700f, h * 1f)
-            lineTo(1f, h); lineTo(0.1f, 30f); close()
+            moveTo(0f, 0f)
+            lineTo(w * 0.6f, 0f)
+
+            cubicTo(
+                w * 0.45f, h * 1f,
+                w * 0.2f, h * 1.5f,
+                w * 0.19f, h * 1.7f
+            )
+
+            cubicTo(
+                w * 0.12f, h * 2f,
+                w * 0.3f, h * 3f,
+                0f, h * 3.9f
+            )
+
+            lineTo(0f, 0f)
+            close()
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
-
         val cocoa = Path().apply {
-            moveTo(w * 23f, 0f); lineTo(w, w*4f); lineTo(w, h * 1f)
-            cubicTo(w * 0.22f, h * 0.55f, w * 0.78f, h * 0.30f, w * 0.70f, 0f)
+            moveTo(w, 0f)
+            lineTo(w * 0.4f, 0f)
+
+            cubicTo(
+                w * 0.55f, h * 1f,
+                w * 0.80f, h * 1.5f,
+                w * 0.81f, h * 1.7f
+            )
+
+            cubicTo(
+                w * 0.88f, h * 2f,
+                w * 0.70f, h * 3f,
+                w * 1.00f, h * 3.9f
+            )
+
+            lineTo(w, 0f)
             close()
         }
-        drawPath(cocoa, Cocoa.copy(alpha = 0.3f),style=Fill)
+        drawPath(cocoa, Cocoa.copy(alpha = 0.30f), style = Fill)
+
     }
 }
 
@@ -106,7 +134,7 @@ fun LoginScreenUI(
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(top = headerHeight)
+                    .padding(top = 100.dp)
                     .padding(horizontal = 30.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -123,7 +151,6 @@ fun LoginScreenUI(
                 )
 
                 Spacer(Modifier.height(15.dp))
-
 
                 // Logo
                 Box(
@@ -160,7 +187,7 @@ fun LoginScreenUI(
                     ),
                     label = {
                         Text(
-                            "Usuario",
+                            "Correo Electronico",
                             style = TextStyle(
                                 fontFamily = InriaSans,
                                 fontWeight = FontWeight.Normal,

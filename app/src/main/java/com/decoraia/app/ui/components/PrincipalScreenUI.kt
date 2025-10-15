@@ -51,9 +51,17 @@ private fun TopWaves(modifier: Modifier = Modifier) {
         val h = size.height
 
         val terracotta = Path().apply {
-            moveTo(5f, 0f); lineTo(w * 0.5f, 1f)
-            cubicTo(w * 0.30f, h * 0.10f, w * 0.9f, h * 0.2f, -700f, h * 1f)
-            lineTo(1f, h); lineTo(0f, 30f); close()
+            moveTo(5f, 0f)
+            lineTo(w * 0.5f, 0f)
+
+            cubicTo(
+                w * 0.30f, h * 0.10f,
+                w * 0.9f, h * 0.2f,
+                -700f, h * 1f
+            )
+
+            lineTo(0f, 0f)
+            close()
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
