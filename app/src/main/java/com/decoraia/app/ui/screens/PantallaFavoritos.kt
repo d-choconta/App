@@ -1,52 +1,104 @@
 ﻿package com.decoraia.app.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
+import android.net.Uri
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import com.decoraia.app.data.ProductoAR
+import com.decoraia.app.data.RAProductsRepo
+import com.decoraia.app.ui.components.RAModelosScreenUI
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @Composable
-fun PantallaFavoritos(navController: NavController) {
-    val uid = FirebaseAuth.getInstance().currentUser?.uid
-    var items by remember { mutableStateOf(listOf<Map<String,Any>>()) }
+fun PantallaFavoritos(nav: NavHostController) {
 
-    LaunchedEffect(uid) {
+    // --- Firebase ---
+    val auth = remember { FirebaseAuth.getInstance() }
+    val db   = remember { FirebaseFirestore.getInstance() }
+    val uid  = auth.currentUser?.uid
+
+    // --- Estado UI ---
+    var loading by remember { mutableStateOf(true) }
+    var errorMsg by remember { mutableStateOf<String?>(null) }
+    var modelos by remember { mutableStateOf(emptyList<ProductoAR>()) }
+    var favoriteIds by remember { mutableStateOf(setOf<String>()) }
+    val scope = rememberCoroutineScope()
+
+    DisposableEffect(uid) {
+        var reg: ListenerRegistration? = null
         if (uid != null) {
-            FirebaseFirestore.getInstance().collection("users").document(uid)
-                .collection("favoritos").get().addOnSuccessListener { snap ->
-                    items = snap.documents.mapNotNull { it.data }
+            reg = db.collection("users")
+                .document(uid)
+                .collection("favorites")
+                .addSnapshotListener { snap, err ->
+                    if (err != null) {
+                        errorMsg = err.message
+                        return@addSnapshotListener
+                    }
+                    val ids = snap?.documents?.mapNotNull { d ->
+                        d.getString("productId") ?: d.id
+                    }?.toSet() ?: emptySet()
+                    favoriteIds = ids
                 }
         }
+        onDispose { reg?.remove() }
     }
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Favoritos", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(8.dp))
-        LazyColumn {
-            items(items.size) { i ->
-                val it = items[i]
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                    Column(Modifier.padding(12.dp)) {
-                        Text(it["titulo"] as? String ?: "Sin título")
-                        Spacer(Modifier.height(6.dp))
-                        Row {
-                            Button(onClick = { /* ver item */ }) { Text("Ver") }
-                            Spacer(Modifier.width(8.dp))
-                            Button(onClick = {
-                                // quitar favorito
-                                val docId = it["id"] as? String ?: return@Button
-                                FirebaseFirestore.getInstance().collection("users").document(uid!!)
-                                    .collection("favoritos").document(docId).delete()
-                            }) { Text("Quitar") }
-                        }
-                    }
-                }
+    LaunchedEffect(favoriteIds) {
+        if (uid == null) {
+            loading = false
+            errorMsg = "Debes iniciar sesión para ver favoritos."
+            modelos = emptyList()
+            return@LaunchedEffect
+        }
+        scope.launch {
+            try {
+                loading = true
+                errorMsg = null
+                modelos = RAProductsRepo.loadProductosByIds(favoriteIds.toList())
+            } catch (e: Exception) {
+                errorMsg = e.message
+                modelos = emptyList()
+            } finally {
+                loading = false
             }
         }
     }
+
+    fun toggleFavorite(item: ProductoAR) {
+        val currentUid = uid ?: return
+        scope.launch {
+            try {
+                if (favoriteIds.contains(item.id)) {
+                    RAProductsRepo.removeFavorite(currentUid, item.id)
+                } else {
+                    RAProductsRepo.addFavorite(currentUid, item)
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    RAModelosScreenUI(
+        categoriaTitulo = "Favoritos",
+        modelos = modelos,
+        loading = loading,
+        favoriteIds = favoriteIds,
+        errorMsg = errorMsg,
+        onBack = { nav.popBackStack() },
+        onSelectModelo = { modelo ->
+            val encoded = Uri.encode(modelo.modelUrl)
+            nav.navigate("arviewer?modelUrl=$encoded")
+        },
+        onToggleFavorite = { producto -> toggleFavorite(producto) },
+        onHome = {
+            nav.navigate("principal") {
+                popUpTo("principal") { inclusive = true }
+            }
+        },
+        onProfile = { nav.navigate("perfil") }
+    )
 }

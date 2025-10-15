@@ -1,4 +1,3 @@
-
 package com.decoraia.app.ui.nav
 
 import android.net.Uri
@@ -9,8 +8,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.google.firebase.auth.FirebaseAuth
-
-// Screens
 import com.decoraia.app.ui.screens.*
 
 @Composable
@@ -20,7 +17,6 @@ fun AppNavGraph(navController: NavHostController) {
 
     NavHost(navController = navController, startDestination = start) {
 
-        // -------- Rutas simples --------
         composable("acercade") { PantallaAcercaDe(navController) }
         composable("ajustescuenta") { PantallaAjustesCuenta(navController) }
         composable("carga") { PantallaCarga(navController) }
@@ -30,8 +26,8 @@ fun AppNavGraph(navController: NavHostController) {
         composable("chatia") { PantallaChatIA(navController) }
         composable("configuracion") { PantallaConfiguracion(navController) }
         composable("descripcion") { PantallaDescripcion(navController) }
-        composable("editarperfil") { PantallaEditarPerfil(navController) }
-        composable("favoritos") { PantallaFavoritos(navController) }
+        composable("editarperfil") { PantallaEditarPerfil(navController) } // ✅ deja solo una
+        composable("favoritos") { PantallaFavoritos(navController) }       // ✅ existe esta ruta
         composable("inicio") { PantallaInicio(navController) }
         composable("login") { PantallaLogin(navController) }
         composable("mensajesalida") { PantallaMensajeSalida(navController) }
@@ -42,22 +38,20 @@ fun AppNavGraph(navController: NavHostController) {
         composable("salidaperfil") { PantallaSalidaPerfil(navController) }
         composable("soporte") { PantallaSoporte(navController) }
         composable("visualizacion") { PantallaVisualizacion(navController) }
-        composable("editarperfil") { PantallaEditarPerfil(navController)}
+
+        // RA Estilos (sin args)
         composable("raestilos") { PantallaRAEstilos(navController) }
 
-        // -------- RA: Objetos (estilo)
+        // RA Objetos (recibe estilo)
         composable(
             route = "raobjetos/{style}",
-            arguments = listOf(
-                navArgument("style") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("style") { type = NavType.StringType })
         ) { backStackEntry ->
-            // decodifica espacios/tildes
             val style = Uri.decode(backStackEntry.arguments?.getString("style").orEmpty())
             PantallaRAObjetos(navController, style = style)
         }
 
-        // -------- RA: Modelos (estilo + categoría)
+        // RA Modelos (recibe estilo + categoría)
         composable(
             route = "ramodelos/{style}/{categoryId}",
             arguments = listOf(
@@ -70,7 +64,7 @@ fun AppNavGraph(navController: NavHostController) {
             PantallaRAModelos(navController, style = style, categoryId = categoryId)
         }
 
-        // -------- (Opcional) Visor AR por URL de modelo
+        // Visor AR opcional
         composable(
             route = "arviewer?modelUrl={modelUrl}",
             arguments = listOf(
@@ -80,9 +74,7 @@ fun AppNavGraph(navController: NavHostController) {
                     defaultValue = null
                 }
             )
-        ) { backStackEntry ->
-            val modelUrl = backStackEntry.arguments?.getString("modelUrl")
-            // si tienes un visor dedicado, navega allí; de momento usamos esta
+        ) {
             PantallaVisualizacion(navController)
         }
     }

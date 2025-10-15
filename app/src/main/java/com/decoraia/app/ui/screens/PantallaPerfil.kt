@@ -41,20 +41,7 @@ fun PantallaPerfil(navController: NavController) {
         onBack   = { navController.popBackStack() },
         onEdit   = { navController.navigate("editarperfil") },
 
-        // 👉 “Favoritos” ahora abre RAModelos de forma segura
-        onFavoritos = {
-            runCatching {
-                navController.navigate("ramodelos") {
-                    launchSingleTop = true
-                    restoreState = true
-                    // quita duplicados si ya estás ahí
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
-                        inclusive = false
-                    }
-                }
-            }
-        },
+        onFavoritos = { navController.navigate("favoritos") },
 
         onChats  = { navController.navigate("chatguardados") },
         onLogout = {
