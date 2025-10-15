@@ -3,6 +3,7 @@ package com.decoraia.app.ui.components
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -35,7 +36,7 @@ private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa = Color(0xFFB2754E)
 
-
+/* ===== HEADER (Terracotta full width) ===== */
 @Composable
 private fun HeaderEstilos(
     title: String,
@@ -45,27 +46,14 @@ private fun HeaderEstilos(
     Box(
         Modifier
             .fillMaxWidth()
-            .height(210.dp)
+            .height(220.dp)
             .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             .background(Terracotta)
     ) {
-        // Botón back circular (sin Spacer adentro)
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier
-                .padding(start = 17.dp, top = 17.dp)
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(Cocoa.copy(alpha = 0.95f))
-                .align(Alignment.TopStart)
-        ) {
-            Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
-        }
 
-        // Imagen del banner dentro del recuadro terracota
         Box(
             modifier = Modifier
-                .padding(horizontal = 18.dp, vertical = 45.dp)
+                .padding(horizontal = 18.dp, vertical = 30.dp)
                 .fillMaxWidth()
                 .height(135.dp)
                 .clip(RoundedCornerShape(16.dp))
@@ -89,6 +77,24 @@ private fun HeaderEstilos(
                 )
             )
         }
+
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .padding(start = 17.dp, top = 17.dp)
+                .size(60.dp)
+                .clip(CircleShape)
+                .background(Cocoa.copy(alpha = 0.9f))
+                .border(2.dp, Terracotta, CircleShape)
+                .align(Alignment.TopStart)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = "Atrás",
+                tint = Color.White
+            )
+        }
+
     }
 }
 
@@ -104,7 +110,7 @@ private fun EstiloRowCard(
     Box(
         modifier
             .fillMaxWidth()
-            .height(140.dp)
+            .height(115.dp)
             .clip(RoundedCornerShape(22.dp))
             .clickable { onClick() }
     ) {
@@ -129,23 +135,33 @@ private fun EstiloRowCard(
     }
 }
 
-/* ===== BOTTOM BAR ===== */
+/* ===== BOTTOM BAR (estilo “grande” con borde) ===== */
 @Composable
 private fun BottomActions(onHome: () -> Unit, onProfile: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
             onClick = onHome,
             modifier = Modifier
-                .size(64.dp)
+                .size(72.dp)
                 .clip(CircleShape)
-                .background(Terracotta)
-        ) { Icon(Icons.Filled.Home, contentDescription = "Inicio", tint = Color.White) }
+                .background(Cocoa.copy(alpha = 0.9f))
+                .border(2.dp, Terracotta, CircleShape)
+        ) {
+            Icon(
+                Icons.Filled.Home,
+                contentDescription = "Inicio",
+                tint = Color.White,
+                modifier = Modifier.size(36.dp)
+            )
+        }
 
+        // “pastilla” central decorativa (como en tu referencia)
         Box(
             Modifier
                 .weight(1f)
@@ -158,10 +174,18 @@ private fun BottomActions(onHome: () -> Unit, onProfile: () -> Unit) {
         IconButton(
             onClick = onProfile,
             modifier = Modifier
-                .size(64.dp)
+                .size(72.dp)
                 .clip(CircleShape)
-                .background(Terracotta)
-        ) { Icon(Icons.Filled.Person, contentDescription = "Perfil", tint = Color.White) }
+                .background(Cocoa.copy(alpha = 0.9f))
+                .border(2.dp, Terracotta, CircleShape)
+        ) {
+            Icon(
+                Icons.Filled.Person,
+                contentDescription = "Perfil",
+                tint = Color.White,
+                modifier = Modifier.size(36.dp)
+            )
+        }
     }
 }
 
@@ -178,9 +202,8 @@ fun RAEstilosScreenUI(
     @DrawableRes imgMediterraneo: Int = R.drawable.estilo_mediterraneo,
     @DrawableRes imgMinimalista: Int = R.drawable.estilo_minimalista,
     @DrawableRes imgIndustrial: Int = R.drawable.estilo_industrial,
-    @DrawableRes imgPlaceholder: Int = R.drawable.estilo_minimalista // fallback
+    @DrawableRes imgPlaceholder: Int = R.drawable.estilo_minimalista
 ) {
-    // Mapeo nombre -> imagen, tolerante a tildes/variantes
     fun imageFor(name: String): Int = when (name.trim().lowercase()) {
         "clásico", "clasico" -> imgClasico
         "mediterráneo", "mediterraneo" -> imgMediterraneo
@@ -210,6 +233,6 @@ fun RAEstilosScreenUI(
             }
 
             BottomActions(onHome = onHome, onProfile = onProfile)
+            }
         }
-    }
 }

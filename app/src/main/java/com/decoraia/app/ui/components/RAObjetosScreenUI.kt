@@ -3,6 +3,7 @@ package com.decoraia.app.ui.components
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -39,7 +40,7 @@ private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa = Color(0xFFB2754E)
 
-/* ===== Header Terracotta (full width) ===== */
+/* ===== Header Terracotta (mismo estilo que Estilos) ===== */
 @Composable
 private fun HeaderObjetos(
     @DrawableRes banner: Int,
@@ -49,25 +50,14 @@ private fun HeaderObjetos(
     Box(
         Modifier
             .fillMaxWidth()
-            .height(210.dp)
+            .height(220.dp)
             .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             .background(Terracotta)
     ) {
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier
-                .padding(start = 17.dp, top = 17.dp)
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(Cocoa.copy(alpha = 0.95f))
-                .align(Alignment.TopStart)
-        ) {
-            Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
-        }
-
+        // Banner con título
         Box(
             modifier = Modifier
-                .padding(horizontal = 18.dp, vertical = 45.dp)
+                .padding(horizontal = 18.dp, vertical = 30.dp) // igual que en Estilos
                 .fillMaxWidth()
                 .height(135.dp)
                 .clip(RoundedCornerShape(16.dp))
@@ -86,15 +76,33 @@ private fun HeaderObjetos(
                 style = TextStyle(
                     fontFamily = MuseoModerno,
                     fontWeight = FontWeight.SemiBold,
-                    fontSize = 36.sp,
+                    fontSize = 40.sp,
                     color = Color.White
                 )
+            )
+        }
+
+        // Botón Back superpuesto (Cocoa + borde Terracotta)
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .padding(start = 17.dp, top = 17.dp)
+                .size(60.dp)
+                .clip(CircleShape)
+                .background(Cocoa.copy(alpha = 0.9f))
+                .border(2.dp, Terracotta, CircleShape)
+                .align(Alignment.TopStart)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = "Atrás",
+                tint = Color.White
             )
         }
     }
 }
 
-/* ===== Card de categoría (2 columnas) ===== */
+/* ===== Card de categoría ===== */
 private data class CategoriaItem(
     val label: String,
     @DrawableRes val image: Int,
@@ -109,6 +117,8 @@ private fun CategoriaCard(
 ) {
     Box(
         modifier
+            .fillMaxWidth()
+            .height(120.dp)
             .clip(RoundedCornerShape(18.dp))
             .clickable { onClick(item.categoria) }
     ) {
@@ -116,9 +126,7 @@ private fun CategoriaCard(
             painter = painterResource(item.image),
             contentDescription = item.label,
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
+            modifier = Modifier.matchParentSize()
         )
         Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.28f)))
         Text(
@@ -135,22 +143,31 @@ private fun CategoriaCard(
     }
 }
 
-/* ===== Bottom bar igual a Estilos ===== */
+/* ===== Bottom bar (estilo “grande” con borde) ===== */
 @Composable
 private fun BottomActionsObjetos(onHome: () -> Unit, onProfile: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
             onClick = onHome,
             modifier = Modifier
-                .size(64.dp)
+                .size(72.dp)
                 .clip(CircleShape)
-                .background(Terracotta)
-        ) { Icon(Icons.Filled.Home, contentDescription = "Inicio", tint = Color.White) }
+                .background(Cocoa.copy(alpha = 0.9f))
+                .border(2.dp, Terracotta, CircleShape)
+        ) {
+            Icon(
+                Icons.Filled.Home,
+                contentDescription = "Inicio",
+                tint = Color.White,
+                modifier = Modifier.size(36.dp)
+            )
+        }
 
         Box(
             Modifier
@@ -164,10 +181,18 @@ private fun BottomActionsObjetos(onHome: () -> Unit, onProfile: () -> Unit) {
         IconButton(
             onClick = onProfile,
             modifier = Modifier
-                .size(64.dp)
+                .size(72.dp)
                 .clip(CircleShape)
-                .background(Terracotta)
-        ) { Icon(Icons.Filled.Person, contentDescription = "Perfil", tint = Color.White) }
+                .background(Cocoa.copy(alpha = 0.9f))
+                .border(2.dp, Terracotta, CircleShape)
+        ) {
+            Icon(
+                Icons.Filled.Person,
+                contentDescription = "Perfil",
+                tint = Color.White,
+                modifier = Modifier.size(36.dp)
+            )
+        }
     }
 }
 
@@ -186,7 +211,7 @@ fun RAObjetosScreenUI(
     @DrawableRes imgLamparas: Int = R.drawable.cat_lamparas,
     @DrawableRes imgSofas:    Int = R.drawable.cat_sofas
 ) {
-    // Mapeo de categorías a imágenes/labels
+    // Mapeo categorías -> imágenes/labels
     fun toItem(cat: RAProductsRepo.Categoria): CategoriaItem =
         when (cat) {
             RAProductsRepo.Categoria.JARRONES -> CategoriaItem(cat.label, imgJarrones, cat)
@@ -200,14 +225,12 @@ fun RAObjetosScreenUI(
     Surface(color = Cream) {
         Column(Modifier.fillMaxSize()) {
 
-            // Header
             HeaderObjetos(
                 banner = headerBanner,
                 title = "Objetos",
                 onBack = onBack
             )
 
-            // Grid 2 columnas
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier
@@ -218,18 +241,14 @@ fun RAObjetosScreenUI(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 items(items) { item ->
-                    CategoriaCard(
-                        item = item,
-                        onClick = onSelectCategoria
-                    )
+                    CategoriaCard(item = item, onClick = onSelectCategoria)
                 }
             }
 
-            // Bottom bar
             BottomActionsObjetos(
                 onHome = onHome,
                 onProfile = onProfile
             )
+            }
         }
-    }
 }

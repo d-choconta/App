@@ -21,11 +21,15 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
+import com.decoraia.app.ui.theme.InriaSans
+import com.decoraia.app.ui.theme.MuseoModerno
 
+/* ===== Colores ===== */
 private val Cream      = Color(0xFFFBF3E3)
 private val CreamDark  = Color(0xFFF2E7D3)
 private val Terracotta = Color(0xFFE1A172)
@@ -33,30 +37,57 @@ private val Cocoa      = Color(0xFFB2754E)
 private val Graphite   = Color(0xFF2D2A26)
 private val Mint       = Color(0xFF7DB686)
 private val CardWarm   = Color(0xFFE4A673)
+private val TerracottaDark = Color(0xFFCF8A57)
 
+/* Fondo superior ondulado */
 @Composable
 private fun TopWaves(modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
         val w = size.width
         val h = size.height
 
-        val terracottaBlob = Path().apply {
-            moveTo(w * .62f, 0f)
-            lineTo(w, 0f)
-            lineTo(w, h * .55f)
-            cubicTo(w * .88f, h * .32f, w * .78f, h * .18f, w * .62f, 0f)
-            close()
-        }
-        drawPath(terracottaBlob, Terracotta, style = Fill)
-
-        val creamTongue = Path().apply {
+        val terracotta = Path().apply {
             moveTo(0f, 0f)
-            lineTo(w * .36f, 0f)
-            cubicTo(w * .18f, h * .25f, w * .18f, h * .50f, 0f, h * .64f)
+            lineTo(w * 0.6f, 0f)
+
+            cubicTo(
+                w * 0.45f, h * 1f,
+                w * 0.2f, h * 1.5f,
+                w * 0.19f, h * 1.7f
+            )
+
+            cubicTo(
+                w * 0.12f, h * 2f,
+                w * 0.3f, h * 3f,
+                0f, h * 2.6f
+            )
+
             lineTo(0f, 0f)
             close()
         }
-        drawPath(creamTongue, CreamDark, style = Fill)
+        drawPath(terracotta, TerracottaDark, style = Fill)
+
+        val cocoa = Path().apply {
+            moveTo(w, 0f)
+            lineTo(w * 0.4f, 0f)
+
+            cubicTo(
+                w * 0.55f, h * 1f,
+                w * 0.80f, h * 1.5f,
+                w * 0.81f, h * 1.7f
+            )
+
+            cubicTo(
+                w * 0.88f, h * 2f,
+                w * 0.70f, h * 3f,
+                w * 1.00f, h * 3.9f
+            )
+
+            lineTo(w, 0f)
+            close()
+        }
+        drawPath(cocoa, Cocoa.copy(alpha = 0.30f), style = Fill)
+
     }
 }
 
@@ -85,13 +116,14 @@ fun PantallaPerfilUI(
             ) {
                 TopWaves(Modifier.fillMaxSize())
 
+                /* === Back con estilo grande + borde (como tus ejemplos) === */
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
-                        .padding(start = 14.dp, top = 14.dp)
-                        .size(44.dp)
+                        .padding(start = 17.dp, top = 17.dp)
+                        .size(60.dp)
                         .clip(CircleShape)
-                        .background(Cocoa.copy(alpha = .95f))
+                        .background(Cocoa.copy(alpha = 0.9f))
                         .border(2.dp, Terracotta, CircleShape)
                         .align(Alignment.TopStart)
                 ) {
@@ -106,8 +138,9 @@ fun PantallaPerfilUI(
                     "Perfil",
                     style = TextStyle(
                         color = Graphite,
+                        fontFamily = InriaSans,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 32.sp
+                        fontSize = 50.sp
                     ),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -122,8 +155,7 @@ fun PantallaPerfilUI(
                     .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-                // Avatar (perfil)
+                // Avatar
                 Box(
                     modifier = Modifier
                         .size(220.dp)
@@ -138,21 +170,22 @@ fun PantallaPerfilUI(
                     )
                 }
 
-                Spacer(Modifier.height(30.dp))
+                Spacer(Modifier.height(2.dp))
 
-                // Tarjeta con datos
+                // Tarjeta de datos
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(CardWarm, RoundedCornerShape(16.dp))
-                        .padding(14.dp)
-                ) {
-                    Text("Nombre: ${nombre.ifBlank { "(sin nombre)" }}", color = Color.White, fontSize = 14.sp)
-                    Text("Correo: ${email.ifBlank { "(sin email)" }}",   color = Color.White, fontSize = 14.sp)
-                    Text("Celular: ${celular.ifBlank { "(sin celular)" }}", color = Color.White, fontSize = 14.sp)
-                    Text("País: ${pais.ifBlank { "(sin país)" }}",       color = Color.White, fontSize = 14.sp)
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
 
-                    Spacer(Modifier.height(10.dp))
+                ) {
+                    Text("Nombre: ${nombre.ifBlank { "(sin nombre)" }}", color = Color.White,fontFamily = MuseoModerno, fontWeight = FontWeight.SemiBold ,fontSize = 20.sp)
+                    Text("Correo: ${email.ifBlank { "(sin email)" }}",   color = Color.White,fontFamily = MuseoModerno, fontWeight = FontWeight.SemiBold,fontSize = 20.sp)
+                    Text("Celular: ${celular.ifBlank { "(sin celular)" }}", color = Color.White,fontFamily = MuseoModerno, fontWeight = FontWeight.SemiBold,fontSize = 20.sp)
+                    Text("País: ${pais.ifBlank { "(sin país)" }}",       color = Color.White,fontFamily = MuseoModerno, fontWeight = FontWeight.SemiBold,fontSize = 20.sp)
+
+                    Spacer(Modifier.height(0.dp))
                     Button(
                         onClick = onEdit,
                         colors = ButtonDefaults.buttonColors(
@@ -161,83 +194,56 @@ fun PantallaPerfilUI(
                         ),
                         modifier = Modifier.align(Alignment.End),
                         shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                        contentPadding = PaddingValues(horizontal = 26.dp, vertical = 6.dp)
                     ) { Text("Editar") }
                 }
 
                 Spacer(Modifier.height(14.dp))
 
-                // Tarjetas con imágenes para Favoritos / Chats
+                // Favoritos / Chats
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     ElevatedCard(
                         onClick = onFavoritos,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(110.dp),
+                        modifier = Modifier.weight(1f).height(110.dp),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(14.dp))
-                        ) {
+                        Box(Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp))) {
                             Image(
                                 painter = painterResource(id = R.drawable.favoritos),
                                 contentDescription = "Favoritos",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
-                            // Overlay
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black.copy(alpha = 0.35f))
-                            )
+                            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
                             Text(
                                 "Favoritos",
                                 color = Color.White,
                                 fontWeight = FontWeight.Medium,
-                                modifier = Modifier
-                                    .align(Alignment.BottomStart)
-                                    .padding(12.dp)
+                                modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
                             )
                         }
                     }
-
                     ElevatedCard(
                         onClick = onChats,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(110.dp),
+                        modifier = Modifier.weight(1f).height(110.dp),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(14.dp))
-                        ) {
+                        Box(Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp))) {
                             Image(
                                 painter = painterResource(id = R.drawable.chats),
                                 contentDescription = "Chats",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
-                            // Overlay
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black.copy(alpha = 0.35f))
-                            )
+                            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
                             Text(
                                 "Chats",
                                 color = Color.White,
                                 fontWeight = FontWeight.Medium,
-                                modifier = Modifier
-                                    .align(Alignment.BottomStart)
-                                    .padding(12.dp)
+                                modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
                             )
                         }
                     }
@@ -247,9 +253,7 @@ fun PantallaPerfilUI(
 
                 Button(
                     onClick = onLogout,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(46.dp),
+                    modifier = Modifier.fillMaxWidth().height(46.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFE9B0B0),
                         contentColor = Graphite
@@ -260,16 +264,44 @@ fun PantallaPerfilUI(
                 Spacer(Modifier.height(8.dp))
             }
 
-            // Home
-            FloatingActionButton(
-                onClick = onHome,
-                containerColor = Terracotta,
-                contentColor = Color.White,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp)
-                    .size(54.dp)
-            ) { Icon(Icons.Filled.Home, contentDescription = "Home") }
+            /* === Bottom bar con el mismo estilo de tus ejemplos === */
+            Row(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = onHome,
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(Cocoa.copy(alpha = 0.9f))
+                        .border(2.dp, Terracotta, CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Home,
+                        contentDescription = "Inicio",
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+
+                // Pastilla central decorativa para mantener el patrón visual
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(56.dp)
+                        .padding(horizontal = 12.dp)
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(Color.White.copy(alpha = 0.45f))
+                )
+
+                // En Perfil no hay segundo botón funcional; dejamos un “espacio vivo”
+                Spacer(Modifier.width(72.dp))
+            }
             }
         }
 }

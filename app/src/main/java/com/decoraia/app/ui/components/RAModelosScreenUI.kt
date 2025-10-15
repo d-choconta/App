@@ -3,6 +3,7 @@ package com.decoraia.app.ui.components
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -23,17 +24,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
 import coil.compose.AsyncImage
 import com.decoraia.app.R
 import com.decoraia.app.data.ProductoAR
+import com.decoraia.app.ui.theme.MuseoModerno
 
-/* ===== Paleta local ===== */
+/* ===== Paleta ===== */
 private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa = Color(0xFFB2754E)
 
-/* ===== Header propio (terracota + banner + back) ===== */
+/* ===== Header (terracota + banner + back con borde) ===== */
 @Composable
 private fun HeaderModelos(
     title: String,
@@ -43,25 +49,14 @@ private fun HeaderModelos(
     Box(
         Modifier
             .fillMaxWidth()
-            .height(210.dp)
+            .height(220.dp)
             .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             .background(Terracotta)
     ) {
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier
-                .padding(start = 17.dp, top = 17.dp)
-                .size(52.dp)
-                .clip(CircleShape)
-                .background(Cocoa.copy(alpha = 0.95f))
-                .align(Alignment.TopStart)
-        ) {
-            Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
-        }
-
+        // Banner
         Box(
             modifier = Modifier
-                .padding(horizontal = 18.dp, vertical = 45.dp)
+                .padding(horizontal = 18.dp, vertical = 30.dp)
                 .fillMaxWidth()
                 .height(135.dp)
                 .clip(RoundedCornerShape(16.dp))
@@ -78,28 +73,50 @@ private fun HeaderModelos(
             Text(
                 text = title,
                 color = Color.White,
-                style = MaterialTheme.typography.headlineMedium
+                style = TextStyle(
+                    fontFamily = MuseoModerno,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 40.sp
+                )
             )
+        }
+
+        // Back (Cocoa + borde Terracotta) 60.dp
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .padding(start = 17.dp, top = 17.dp)
+                .size(60.dp)
+                .clip(CircleShape)
+                .background(Cocoa.copy(alpha = 0.9f))
+                .border(2.dp, Terracotta, CircleShape)
+                .align(Alignment.TopStart)
+        ) {
+            Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
         }
     }
 }
 
-/* ===== Bottom bar propia ===== */
+/* ===== Bottom bar estilo grande (Cocoa + borde) ===== */
 @Composable
 private fun BottomBarModelos(onHome: () -> Unit, onProfile: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
             onClick = onHome,
             modifier = Modifier
-                .size(64.dp)
+                .size(72.dp)
                 .clip(CircleShape)
-                .background(Terracotta)
-        ) { Icon(Icons.Filled.Home, contentDescription = "Inicio", tint = Color.White) }
+                .background(Cocoa.copy(alpha = 0.9f))
+                .border(2.dp, Terracotta, CircleShape)
+        ) {
+            Icon(Icons.Filled.Home, contentDescription = "Inicio", tint = Color.White, modifier = Modifier.size(36.dp))
+        }
 
         Box(
             Modifier
@@ -113,10 +130,13 @@ private fun BottomBarModelos(onHome: () -> Unit, onProfile: () -> Unit) {
         IconButton(
             onClick = onProfile,
             modifier = Modifier
-                .size(64.dp)
+                .size(72.dp)
                 .clip(CircleShape)
-                .background(Terracotta)
-        ) { Icon(Icons.Filled.Person, contentDescription = "Perfil", tint = Color.White) }
+                .background(Cocoa.copy(alpha = 0.9f))
+                .border(2.dp, Terracotta, CircleShape)
+        ) {
+            Icon(Icons.Filled.Person, contentDescription = "Perfil", tint = Color.White, modifier = Modifier.size(36.dp))
+        }
     }
 }
 
@@ -128,7 +148,7 @@ private fun ModeloCard(
     onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    @DrawableRes placeholder: Int = R.drawable.logo   // usa tu logo como placeholder genérico
+    @DrawableRes placeholder: Int = R.drawable.logo // usa tu logo si no hay imagen
 ) {
     Surface(
         modifier = modifier,
@@ -170,7 +190,7 @@ private fun ModeloCard(
     }
 }
 
-/* ===== Pantalla de Modelos (auto-contenida) ===== */
+/* ===== Pantalla ===== */
 @Composable
 fun RAModelosScreenUI(
     categoriaTitulo: String,
@@ -209,11 +229,7 @@ fun RAModelosScreenUI(
                     Modifier.fillMaxWidth().weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        "No hay modelos para este filtro.",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color(0xFF6B6B6B)
-                    )
+                    Text("No hay modelos para este filtro.", color = Color(0xFF6B6B6B))
                 }
 
                 else -> LazyVerticalGrid(
@@ -241,6 +257,6 @@ fun RAModelosScreenUI(
             }
 
             BottomBarModelos(onHome = onHome, onProfile = onProfile)
+            }
         }
-    }
 }

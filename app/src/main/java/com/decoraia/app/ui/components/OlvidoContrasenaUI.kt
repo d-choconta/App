@@ -17,20 +17,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
-import com.decoraia.app.ui.theme.MuseoModerno
 
 // Paleta
-private val Cream = Color(0xFFFBF3E3)
+private val Cream      = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
-private val Cocoa = Color(0xFFB2754E)
-private val Graphite = Color(0xFF2D2A26)
+private val Cocoa      = Color(0xFFB2754E)
+private val Graphite   = Color(0xFF2D2A26)
+private val ErrorRed   = Color(0xFFD32F2F)
+private val SuccessGre = Color(0xFF2E7D32)
 
 @Composable
 fun OlvidoContrasenaUI(
@@ -40,7 +40,11 @@ fun OlvidoContrasenaUI(
     onEmailChange: (String) -> Unit,
     loading: Boolean,
     onEnviarCodigo: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    // nuevos para mensajes inline
+    emailError: String? = null,
+    actionError: String? = null,
+    successMessage: String? = null
 ) {
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
@@ -61,7 +65,6 @@ fun OlvidoContrasenaUI(
                 )
             }
 
-            // Contenido
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -107,17 +110,21 @@ fun OlvidoContrasenaUI(
 
                 Spacer(Modifier.height(20.dp))
 
-                // Usuario
+                // Usuario (opcional, sin validación)
                 OutlinedTextField(
                     value = usuario,
                     onValueChange = onUsuarioChange,
                     singleLine = true,
-                    label = { Text("Usuario",
-                        style = TextStyle(
-                            fontFamily = InriaSans,
-                            fontWeight = FontWeight.Normal,
-                            fontSize = 20.sp)
-                        ) },
+                    label = {
+                        Text(
+                            "Usuario",
+                            style = TextStyle(
+                                fontFamily = InriaSans,
+                                fontWeight = FontWeight.Normal,
+                                fontSize = 20.sp
+                            )
+                        )
+                    },
                     textStyle = LocalTextStyle.current.copy(fontSize = 20.sp),
                     shape = RoundedCornerShape(22.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -129,33 +136,43 @@ fun OlvidoContrasenaUI(
                         focusedBorderColor = Cocoa,
                         unfocusedBorderColor = Terracotta
                     ),
-
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(Modifier.height(12.dp))
 
-                // Correo electrónico
+                // Correo electrónico (con error inline)
                 OutlinedTextField(
                     value = email,
                     onValueChange = onEmailChange,
                     singleLine = true,
-                    label = { Text("Correo electrónico",
+                    isError = emailError != null,
+                    supportingText = {
+                        if (emailError != null) Text(emailError, color = ErrorRed, fontSize = 12.sp)
+                    },
+                    label = {
+                        Text(
+                            "Correo electrónico",
                             style = TextStyle(
                                 fontFamily = InriaSans,
                                 fontWeight = FontWeight.Normal,
-                                fontSize = 20.sp)
-                        ) },
+                                fontSize = 20.sp
+                            )
+                        )
+                    },
                     textStyle = LocalTextStyle.current.copy(fontSize = 20.sp),
                     shape = RoundedCornerShape(22.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Graphite,
                         unfocusedTextColor = Graphite,
-                        focusedLabelColor = Cocoa,
+                        focusedLabelColor = if (emailError != null) ErrorRed else Cocoa,
                         unfocusedLabelColor = Cocoa.copy(alpha = .9f),
-                        cursorColor = Cocoa,
-                        focusedBorderColor = Cocoa,
-                        unfocusedBorderColor = Terracotta
+                        cursorColor = if (emailError != null) ErrorRed else Cocoa,
+                        focusedBorderColor = if (emailError != null) ErrorRed else Cocoa,
+                        unfocusedBorderColor = if (emailError != null) ErrorRed else Terracotta,
+                        errorBorderColor = ErrorRed,
+                        errorLabelColor = ErrorRed,
+                        errorCursorColor = ErrorRed
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -181,7 +198,19 @@ fun OlvidoContrasenaUI(
                             color = Graphite
                         )
                     } else {
-                        Text("Enviar Código", fontSize = 22.sp, fontFamily = InriaSans,fontWeight = FontWeight.Normal)
+                        Text("Enviar Código", fontSize = 22.sp, fontWeight = FontWeight.Normal, fontFamily = InriaSans)
+                    }
+                }
+
+                // Mensajes bajo el botón (rojo error / verde éxito)
+                when {
+                    !actionError.isNullOrBlank() -> {
+                        Spacer(Modifier.height(8.dp))
+                        Text(actionError!!, color = ErrorRed, fontSize = 13.sp)
+                    }
+                    !successMessage.isNullOrBlank() -> {
+                        Spacer(Modifier.height(8.dp))
+                        Text(successMessage!!, color = SuccessGre, fontSize = 13.sp)
                     }
                 }
             }

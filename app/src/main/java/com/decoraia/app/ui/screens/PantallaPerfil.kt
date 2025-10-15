@@ -8,7 +8,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun PantallaPerfil(navController: NavController) {
-    // Estado de sesión/datos
     val auth = remember { FirebaseAuth.getInstance() }
     val db   = remember { FirebaseFirestore.getInstance() }
     val uid  = auth.currentUser?.uid
@@ -41,8 +40,23 @@ fun PantallaPerfil(navController: NavController) {
         pais     = pais,
         onBack   = { navController.popBackStack() },
         onEdit   = { navController.navigate("editarperfil") },
-        onFavoritos = { navController.navigate("favoritos") },
-        onChats     = { navController.navigate("chatguardados") },
+
+        // 👉 “Favoritos” ahora abre RAModelos de forma segura
+        onFavoritos = {
+            runCatching {
+                navController.navigate("ramodelos") {
+                    launchSingleTop = true
+                    restoreState = true
+                    // quita duplicados si ya estás ahí
+                    popUpTo(navController.graph.startDestinationId) {
+                        saveState = true
+                        inclusive = false
+                    }
+                }
+            }
+        },
+
+        onChats  = { navController.navigate("chatguardados") },
         onLogout = {
             auth.signOut()
             navController.navigate("inicio") {
@@ -51,8 +65,9 @@ fun PantallaPerfil(navController: NavController) {
         },
         onHome = {
             navController.navigate("principal") {
+                launchSingleTop = true
                 popUpTo(0) { inclusive = true }
             }
-            }
-        )
+        }
+    )
 }

@@ -30,11 +30,12 @@ import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
 
-private val Cream = Color(0xFFFBF3E3)
-private val Terracotta = Color(0xFFE1A172)
+private val Cream          = Color(0xFFFBF3E3)
+private val Terracotta     = Color(0xFFE1A172)
 private val TerracottaDark = Color(0xFFCF8A57)
-private val Cocoa = Color(0xFFB2754E)
-private val Graphite = Color(0xFF2D2A26)
+private val Cocoa          = Color(0xFFB2754E)
+private val Graphite       = Color(0xFF2D2A26)
+private val ErrorRed       = Color(0xFFD32F2F)
 
 @Composable
 private fun TopWavesRegistro(modifier: Modifier = Modifier) {
@@ -42,54 +43,24 @@ private fun TopWavesRegistro(modifier: Modifier = Modifier) {
         val w = size.width
         val h = size.height
 
-
         val terracotta = Path().apply {
-            moveTo(0f, 0f)
-            lineTo(w * 0.50f, 0f)
-
-            cubicTo(
-                w * 0.40f, h * 1f,
-                w * 0.1f, h * 1f,
-                w * 0.19f, h * 1f
-            )
-
-            cubicTo(
-                w * 0.06f, h * 1f,
-                w * 0.2f, h * 3f,
-                0f,       h * 3.9f
-            )
-
-            lineTo(0f, 0f)
-            close()
+            moveTo(0f, 0f); lineTo(w * 0.50f, 0f)
+            cubicTo(w * 0.40f, h * 1f, w * 0.1f, h * 1f, w * 0.19f, h * 1f)
+            cubicTo(w * 0.06f, h * 1f, w * 0.2f, h * 3f, 0f, h * 3.9f)
+            lineTo(0f, 0f); close()
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
         val cocoa = Path().apply {
-            moveTo(w, 0f)
-            lineTo(w * 0.50f, 0f)
-
-
-            cubicTo(
-                w * 0.60f, h * 1f,
-                w * 0.9f,  h * 1f,
-                w * 0.81f, h * 1f
-            )
-
-
-            cubicTo(
-                w * 0.94f, h * 1f,
-                w * 0.80f, h * 3f,
-                w,        h * 3.9f
-            )
-
-            lineTo(w, 0f)
-            close()
+            moveTo(w, 0f); lineTo(w * 0.50f, 0f)
+            cubicTo(w * 0.60f, h * 1f, w * 0.9f,  h * 1f, w * 0.81f, h * 1f)
+            cubicTo(w * 0.94f, h * 1f, w * 0.80f, h * 3f, w, h * 3.9f)
+            lineTo(w, 0f); close()
         }
         drawPath(cocoa, Cocoa.copy(alpha = 0.30f), style = Fill)
     }
 }
 
-/* ----------- UI de Registro ----------- */
 @Composable
 fun RegistroScreenUI(
     nombre: String,
@@ -105,7 +76,13 @@ fun RegistroScreenUI(
     onBack: () -> Unit,
     onHaveAccountClick: () -> Unit,
     @DrawableRes heroImage: Int = R.drawable.registro,
-
+    // Errores inline
+    nombreError: String? = null,
+    emailError: String? = null,
+    passwordError: String? = null,
+    confirmError: String? = null,
+    actionError: String? = null, // error general (Firebase)
+    // Tweaks visuales opcionales
     titleYOffset: Dp = (-10).dp,
     heroHeight: Dp = 280.dp,
     heroWidthFraction: Float = 0.80f
@@ -162,7 +139,6 @@ fun RegistroScreenUI(
 
                 Spacer(Modifier.height(0.dp))
 
-
                 Image(
                     painter = painterResource(heroImage),
                     contentDescription = "Registro",
@@ -172,38 +148,29 @@ fun RegistroScreenUI(
                     contentScale = ContentScale.Fit
                 )
 
-                Spacer(Modifier.height(-2.dp))
+                Spacer(Modifier.height(2.dp))
 
+                val shape = RoundedCornerShape(22.dp)
 
                 // Nombre
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = onNombreChange,
                     singleLine = true,
-                    textStyle = TextStyle(
-                        fontFamily = InriaSans,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 20.sp
-                    ),
-                    label = {
-                        Text(
-                            "Nombre de Usuario",
-                            style = TextStyle(
-                                fontFamily = InriaSans,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 19.sp
-                            )
-                        )
-                    },
-                    shape = RoundedCornerShape(22.dp),
+                    isError = nombreError != null,
+                    supportingText = { if (nombreError != null) Text(nombreError, color = ErrorRed, fontSize = 12.sp) },
+                    textStyle = TextStyle(fontFamily = InriaSans, fontWeight = FontWeight.Normal, fontSize = 20.sp),
+                    label = { Text("Nombre de Usuario", style = TextStyle(fontFamily = InriaSans, fontSize = 19.sp)) },
+                    shape = shape,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Graphite,
                         unfocusedTextColor = Graphite,
-                        focusedLabelColor = Cocoa,
+                        focusedLabelColor = if (nombreError != null) ErrorRed else Cocoa,
                         unfocusedLabelColor = Cocoa.copy(alpha = .9f),
-                        cursorColor = Cocoa,
-                        focusedBorderColor = Cocoa,
-                        unfocusedBorderColor = Terracotta
+                        cursorColor = if (nombreError != null) ErrorRed else Cocoa,
+                        focusedBorderColor = if (nombreError != null) ErrorRed else Cocoa,
+                        unfocusedBorderColor = if (nombreError != null) ErrorRed else Terracotta,
+                        errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -215,30 +182,20 @@ fun RegistroScreenUI(
                     value = email,
                     onValueChange = onEmailChange,
                     singleLine = true,
-                    textStyle = TextStyle(
-                        fontFamily = InriaSans,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 20.sp
-                    ),
-                    label = {
-                        Text(
-                            "Correo Electrónico",
-                            style = TextStyle(
-                                fontFamily = InriaSans,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 19.sp
-                            )
-                        )
-                    },
-                    shape = RoundedCornerShape(22.dp),
+                    isError = emailError != null,
+                    supportingText = { if (emailError != null) Text(emailError, color = ErrorRed, fontSize = 12.sp) },
+                    textStyle = TextStyle(fontFamily = InriaSans, fontWeight = FontWeight.Normal, fontSize = 20.sp),
+                    label = { Text("Correo Electrónico", style = TextStyle(fontFamily = InriaSans, fontSize = 19.sp)) },
+                    shape = shape,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Graphite,
                         unfocusedTextColor = Graphite,
-                        focusedLabelColor = Cocoa,
+                        focusedLabelColor = if (emailError != null) ErrorRed else Cocoa,
                         unfocusedLabelColor = Cocoa.copy(alpha = .9f),
-                        cursorColor = Cocoa,
-                        focusedBorderColor = Cocoa,
-                        unfocusedBorderColor = Terracotta
+                        cursorColor = if (emailError != null) ErrorRed else Cocoa,
+                        focusedBorderColor = if (emailError != null) ErrorRed else Cocoa,
+                        unfocusedBorderColor = if (emailError != null) ErrorRed else Terracotta,
+                        errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -250,31 +207,21 @@ fun RegistroScreenUI(
                     value = password,
                     onValueChange = onPasswordChange,
                     singleLine = true,
-                    textStyle = TextStyle(
-                        fontFamily = InriaSans,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 20.sp
-                    ),
-                    label = {
-                        Text(
-                            "Contraseña",
-                            style = TextStyle(
-                                fontFamily = InriaSans,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 19.sp
-                            )
-                        )
-                    },
+                    isError = passwordError != null,
+                    supportingText = { if (passwordError != null) Text(passwordError, color = ErrorRed, fontSize = 12.sp) },
+                    textStyle = TextStyle(fontFamily = InriaSans, fontWeight = FontWeight.Normal, fontSize = 20.sp),
+                    label = { Text("Contraseña", style = TextStyle(fontFamily = InriaSans, fontSize = 19.sp)) },
                     visualTransformation = PasswordVisualTransformation(),
-                    shape = RoundedCornerShape(22.dp),
+                    shape = shape,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Graphite,
                         unfocusedTextColor = Graphite,
-                        focusedLabelColor = Cocoa,
+                        focusedLabelColor = if (passwordError != null) ErrorRed else Cocoa,
                         unfocusedLabelColor = Cocoa.copy(alpha = .9f),
-                        cursorColor = Cocoa,
-                        focusedBorderColor = Cocoa,
-                        unfocusedBorderColor = Terracotta
+                        cursorColor = if (passwordError != null) ErrorRed else Cocoa,
+                        focusedBorderColor = if (passwordError != null) ErrorRed else Cocoa,
+                        unfocusedBorderColor = if (passwordError != null) ErrorRed else Terracotta,
+                        errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -286,34 +233,30 @@ fun RegistroScreenUI(
                     value = confirm,
                     onValueChange = onConfirmChange,
                     singleLine = true,
-                    textStyle = TextStyle(
-                        fontFamily = InriaSans,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 20.sp
-                    ),
-                    label = {
-                        Text(
-                            "Confirmar contraseña",
-                            style = TextStyle(
-                                fontFamily = InriaSans,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 19.sp
-                            )
-                        )
-                    },
+                    isError = confirmError != null,
+                    supportingText = { if (confirmError != null) Text(confirmError, color = ErrorRed, fontSize = 12.sp) },
+                    textStyle = TextStyle(fontFamily = InriaSans, fontWeight = FontWeight.Normal, fontSize = 20.sp),
+                    label = { Text("Confirmar contraseña", style = TextStyle(fontFamily = InriaSans, fontSize = 19.sp)) },
                     visualTransformation = PasswordVisualTransformation(),
-                    shape = RoundedCornerShape(22.dp),
+                    shape = shape,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Graphite,
                         unfocusedTextColor = Graphite,
-                        focusedLabelColor = Cocoa,
+                        focusedLabelColor = if (confirmError != null) ErrorRed else Cocoa,
                         unfocusedLabelColor = Cocoa.copy(alpha = .9f),
-                        cursorColor = Cocoa,
-                        focusedBorderColor = Cocoa,
-                        unfocusedBorderColor = Terracotta
+                        cursorColor = if (confirmError != null) ErrorRed else Cocoa,
+                        focusedBorderColor = if (confirmError != null) ErrorRed else Cocoa,
+                        unfocusedBorderColor = if (confirmError != null) ErrorRed else Terracotta,
+                        errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // Error general (Firebase) bajo los campos
+                if (!actionError.isNullOrBlank()) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(actionError, color = ErrorRed, fontSize = 13.sp)
+                }
 
                 Spacer(Modifier.height(15.dp))
 
@@ -330,17 +273,9 @@ fun RegistroScreenUI(
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
                 ) {
                     if (loading) {
-                        CircularProgressIndicator(
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
                     } else {
-                        Text(
-                            "Registrar",
-                            fontFamily = InriaSans,
-                            fontWeight = FontWeight.Light,
-                            fontSize = 22.sp
-                        )
+                        Text("Registrar", fontFamily = InriaSans, fontWeight = FontWeight.Light, fontSize = 22.sp)
                     }
                 }
 
@@ -358,6 +293,6 @@ fun RegistroScreenUI(
 
                 Spacer(Modifier.height(15.dp))
             }
-            }
         }
+    }
 }
