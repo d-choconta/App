@@ -125,7 +125,7 @@ fun PantallaChatIA(navController: NavController? = null) {   // <- navController
             Spacer(Modifier.height(8.dp))
 
             // 🔙 Botón de volver a la pantalla principal
-            Button(onClick = { navController?.navigate("pantallaPrincipal") }) {
+            Button(onClick = { navController?.navigate("principal") }) {
                 Text("Volver")
             }
         }
@@ -172,7 +172,6 @@ private fun enviarMensaje(
     focus.clearFocus()
     onStart()
 
-    // Agrega el mensaje del usuario al chat
     listaMensajes.add(MensajeIA(texto = texto, esUsuario = true))
 
     // Guarda el prompt (no bloquea si falla)
