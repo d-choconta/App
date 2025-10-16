@@ -17,6 +17,13 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Hace disponible tu API Key en BuildConfig.GEMINI_API_KEY
+        buildConfigField(
+            "String",
+            "GEMINI_API_KEY",
+            "\"${project.findProperty("GEMINI_API_KEY") ?: ""}\""
+        )
     }
 
     buildTypes {
@@ -38,6 +45,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -54,7 +62,25 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("androidx.compose.material:material-icons-core:1.6.7")
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
-    // Testing
+
+    // ---- Generative AI (Gemini) ----
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+
+    // ---- Coroutines ----
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    // ---- Firebase ----
+    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
+
+    // ---- UI extra ----
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // ---- Testing ----
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -62,15 +88,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    implementation("io.coil-kt:coil-compose:2.6.0")
-
-    // ---- FIREBASE ----
-    implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
-
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-storage-ktx")
-    implementation("com.google.firebase:firebase-analytics-ktx")
-
 }
-apply(plugin = "com.google.gms.google-services")
