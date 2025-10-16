@@ -5,7 +5,7 @@ import androidx.compose.runtime.*
 import androidx.navigation.NavHostController
 import com.decoraia.app.data.ProductoAR
 import com.decoraia.app.data.RAProductsRepo
-import com.decoraia.app.ui.components.RAModelosScreenUI
+import com.decoraia.app.ui.components.FavoritosScreenUI
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -15,12 +15,12 @@ import kotlinx.coroutines.tasks.await
 @Composable
 fun PantallaFavoritos(nav: NavHostController) {
 
-    // --- Firebase ---
+    //Firebase
     val auth = remember { FirebaseAuth.getInstance() }
     val db   = remember { FirebaseFirestore.getInstance() }
     val uid  = auth.currentUser?.uid
 
-    // --- Estado UI ---
+    //Estado UI
     var loading by remember { mutableStateOf(true) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var modelos by remember { mutableStateOf(emptyList<ProductoAR>()) }
@@ -82,11 +82,10 @@ fun PantallaFavoritos(nav: NavHostController) {
         }
     }
 
-    RAModelosScreenUI(
-        categoriaTitulo = "Favoritos",
-        modelos = modelos,
+
+    FavoritosScreenUI(
+        favoritos = modelos,
         loading = loading,
-        favoriteIds = favoriteIds,
         errorMsg = errorMsg,
         onBack = { nav.popBackStack() },
         onSelectModelo = { modelo ->
@@ -101,4 +100,5 @@ fun PantallaFavoritos(nav: NavHostController) {
         },
         onProfile = { nav.navigate("perfil") }
     )
+
 }

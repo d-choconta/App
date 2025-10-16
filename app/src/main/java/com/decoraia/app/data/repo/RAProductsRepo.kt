@@ -1,4 +1,3 @@
-// com/decoraia/app/data/RAProductsRepo.kt
 package com.decoraia.app.data
 
 import com.google.firebase.firestore.FieldPath
@@ -18,10 +17,8 @@ data class ProductoAR(
 object RAProductsRepo {
     private val db = FirebaseFirestore.getInstance()
 
-    // Estilos fijos usados en la UI (deben coincidir con "style" en Firestore)
     val estilosFijos = listOf("Clásico", "Mediterráneo", "Minimalista", "Industrial")
 
-    // Categorías fijas: id (ruta), label (UI), typeValue (campo "type" en Firestore)
     enum class Categoria(val id: String, val label: String, val typeValue: String) {
         JARRONES("jarrones", "Jarrones", "jarrón"),
         CUADROS("cuadros", "Cuadros", "cuadro"),
@@ -32,11 +29,10 @@ object RAProductsRepo {
         Categoria.JARRONES, Categoria.CUADROS, Categoria.LAMPARAS, Categoria.SOFAS
     )
 
-    /** Carga productos filtrando por estilo + tipo. */
     suspend fun loadProductos(style: String, typeValue: String): List<ProductoAR> {
         val snap = db.collection("products")
-            .whereEqualTo("style", style)        // p. ej. "Minimalista"
-            .whereEqualTo("type", typeValue)     // p. ej. "jarrón"
+            .whereEqualTo("style", style)
+            .whereEqualTo("type", typeValue)
             .get()
             .await()
 
@@ -78,18 +74,17 @@ object RAProductsRepo {
 
     // ==================== Favoritos (users/{uid}/favorites) ====================
 
-    /** Devuelve los productId guardados como favoritos del usuario. */
+    /** ProductId guardados como favoritos */
     suspend fun getFavoriteIds(uid: String): Set<String> {
         val col = db.collection("users").document(uid).collection("favorites")
         val snap = col.get().await()
-        // Soporta docId = productId o documentos con campo "productId"
         return snap.documents.mapNotNull { d ->
             val field = d.getString("productId")
             if (!field.isNullOrBlank()) field else d.id
         }.toSet()
     }
 
-    /** Agrega a favoritos (usa docId = productId para simplificar). */
+    /** Agrega a favoritos */
     suspend fun addFavorite(uid: String, product: ProductoAR) {
         val doc = db.collection("users").document(uid)
             .collection("favorites").document(product.id)
@@ -102,7 +97,7 @@ object RAProductsRepo {
         ).await()
     }
 
-    /** Quita de favoritos. Si el docId no es el productId, borra por query. */
+    /** Quita de favoritos */
     suspend fun removeFavorite(uid: String, productId: String) {
         val col = db.collection("users").document(uid).collection("favorites")
         val byId = col.document(productId).get().await()

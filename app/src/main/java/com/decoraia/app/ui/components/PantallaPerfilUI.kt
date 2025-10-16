@@ -51,15 +51,15 @@ private fun TopWaves(modifier: Modifier = Modifier) {
             lineTo(w * 0.6f, 0f)
 
             cubicTo(
-                w * 0.45f, h * 1f,
-                w * 0.2f, h * 1.5f,
+                w * 0.3f, h * 0.2f,
+                w * 0.2f, h * 1f,
                 w * 0.19f, h * 1.7f
             )
 
             cubicTo(
-                w * 0.12f, h * 2f,
-                w * 0.3f, h * 3f,
-                0f, h * 2.6f
+                w * 0.05f, h * 1.9f,
+                w * 0.009f, h * 2.1f,
+                0f, h * 2.4f
             )
 
             lineTo(0f, 0f)
@@ -72,15 +72,15 @@ private fun TopWaves(modifier: Modifier = Modifier) {
             lineTo(w * 0.4f, 0f)
 
             cubicTo(
-                w * 0.55f, h * 1f,
-                w * 0.80f, h * 1.5f,
+                w * 0.7f, h * 0.2f,
+                w * 0.8f, h * 1f,
                 w * 0.81f, h * 1.7f
             )
 
             cubicTo(
-                w * 0.88f, h * 2f,
-                w * 0.70f, h * 3f,
-                w * 1.00f, h * 3.9f
+                w * 0.95f, h * 1.9f,
+                w * 0.991f, h * 2.1f,
+                w, h * 2.4f
             )
 
             lineTo(w, 0f)
@@ -116,7 +116,7 @@ fun PantallaPerfilUI(
             ) {
                 TopWaves(Modifier.fillMaxSize())
 
-                /* === Back con estilo grande + borde (como tus ejemplos) === */
+
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
@@ -139,7 +139,7 @@ fun PantallaPerfilUI(
                     style = TextStyle(
                         color = Graphite,
                         fontFamily = InriaSans,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Normal,
                         fontSize = 50.sp
                     ),
                     modifier = Modifier
@@ -264,7 +264,7 @@ fun PantallaPerfilUI(
                 Spacer(Modifier.height(8.dp))
             }
 
-            /* === Bottom bar con el mismo estilo de tus ejemplos === */
+
             Row(
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -289,7 +289,7 @@ fun PantallaPerfilUI(
                     )
                 }
 
-                // Pastilla central decorativa para mantener el patrón visual
+
                 Box(
                     Modifier
                         .weight(1f)
@@ -299,7 +299,7 @@ fun PantallaPerfilUI(
                         .background(Color.White.copy(alpha = 0.45f))
                 )
 
-                // En Perfil no hay segundo botón funcional; dejamos un “espacio vivo”
+
                 Spacer(Modifier.width(72.dp))
             }
             }
