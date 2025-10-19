@@ -17,18 +17,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 
-// Modelo simple para los ítems de sofá
 private data class SofaItem(
-    val id: String,          // lo usaremos como categoryId o subcategoría
+    val id: String,
     val title: String,
-    val modelUrl: String? = null // si tienes un GLB/GLTF directo para AR
+    val modelUrl: String     // <- ahora obligatorio para abrir AR
 )
 
-// Ejemplo de data: puedes reemplazarlo por tu data real
+// URLs de ejemplo (funcionan). Luego pon los tuyos .glb
 private val sofaItems = listOf(
-    SofaItem(id = "sofa_moderno", title = "Sofá Moderno", modelUrl = null),
-    SofaItem(id = "sofa_clasico", title = "Sofá Clásico", modelUrl = null),
-    SofaItem(id = "sofa_esquinero", title = "Sofá Esquinero", modelUrl = null),
+    SofaItem(
+        id = "sofa_moderno",
+        title = "Sofá Moderno",
+        modelUrl = "https://storage.googleapis.com/ar-answers-in-search-models/static/Tiger/model.glb"
+    ),
+    SofaItem(
+        id = "sofa_clasico",
+        title = "Sofá Clásico",
+        modelUrl = "https://storage.googleapis.com/ar-answers-in-search-models/static/Chair/model.glb"
+    ),
+    SofaItem(
+        id = "sofa_esquinero",
+        title = "Sofá Esquinero",
+        modelUrl = "https://storage.googleapis.com/ar-answers-in-search-models/static/Houseplant/model.glb"
+    ),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,15 +74,12 @@ fun PantallaSofa(
             ) {
                 items(sofaItems) { item ->
                     SofaCard(
-                        item = item,
-                        onOpenAR = { modelUrl ->
-                            // Abre tu visor AR si tienes URL de modelo
-                            navController.navigate("arviewer?modelUrl=${Uri.encode(modelUrl)}")
-                        },
-                        onOpenModels = {
-                            // Reutiliza tu pantalla de modelos con categoryId="sofa" o la subcategoría
-                            // Si quieres filtrar por subcategoría, puedes pasar item.id
-                            navController.navigate("ramodelos/${Uri.encode(style)}/sofa")
+                        title = item.title,
+                        subtitle = "Toca para abrir en AR",
+                        onClick = {
+                            navController.navigate(
+                                "arviewer?modelUrl=${Uri.encode(item.modelUrl)}"
+                            )
                         }
                     )
                 }
@@ -96,15 +104,14 @@ private fun Header(style: String) {
 
 @Composable
 private fun SofaCard(
-    item: SofaItem,
-    onOpenAR: (String) -> Unit,
-    onOpenModels: () -> Unit
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
 ) {
-    // Card simple; si tuvieras imágenes, añádelas aquí
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onOpenModels() }, // por defecto abre la lista de modelos
+            .clickable { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
@@ -114,17 +121,9 @@ private fun SofaCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
-                Text(item.title, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+                Text(title, fontSize = 18.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.height(6.dp))
-                Text("Toca para ver modelos", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            // Botón opcional para ir directo a AR si hay modelUrl
-            if (item.modelUrl != null) {
-                Spacer(Modifier.width(12.dp))
-                OutlinedButton(onClick = { onOpenAR(item.modelUrl) }) {
-                    Text("Ver en AR")
-                }
+                Text(subtitle, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
