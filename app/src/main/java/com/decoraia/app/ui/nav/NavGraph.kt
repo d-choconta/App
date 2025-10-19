@@ -10,6 +10,9 @@ import androidx.navigation.navArgument
 import com.google.firebase.auth.FirebaseAuth
 import com.decoraia.app.ui.screens.*
 import com.decoraia.app.ui.screens.PantallaSofa
+import com.decoraia.app.ui.screens.PantallaCuadros
+import com.decoraia.app.ui.screens.PantallaJarrones
+import com.decoraia.app.ui.screens.PantallaLamparas
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -39,7 +42,7 @@ fun AppNavGraph(navController: NavHostController) {
         composable("salidaperfil") { PantallaSalidaPerfil(navController) }
         composable("soporte") { PantallaSoporte(navController) }
 
-        // Puedes conservar esta ruta directa si la usas en otro lado
+        // Ruta directa al visor (sin modelo)
         composable("visualizacion") { PantallaVisualizacion(navController, modelUrl = null) }
 
         // RA Estilos (sin args)
@@ -67,13 +70,40 @@ fun AppNavGraph(navController: NavHostController) {
             PantallaRAModelos(navController, style = style, categoryId = categoryId)
         }
 
-        // Sofá (nueva pantalla)
+        // Sofá
         composable(
             route = "sofa/{style}",
             arguments = listOf(navArgument("style") { type = NavType.StringType })
         ) { backStackEntry ->
             val style = Uri.decode(backStackEntry.arguments?.getString("style").orEmpty())
             PantallaSofa(navController, style = style)
+        }
+
+        // Cuadros
+        composable(
+            route = "cuadros/{style}",
+            arguments = listOf(navArgument("style") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val style = Uri.decode(backStackEntry.arguments?.getString("style").orEmpty())
+            PantallaCuadros(navController, style)
+        }
+
+        // Jarrones
+        composable(
+            route = "jarrones/{style}",
+            arguments = listOf(navArgument("style") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val style = Uri.decode(backStackEntry.arguments?.getString("style").orEmpty())
+            PantallaJarrones(navController, style)
+        }
+
+        // Lámparas
+        composable(
+            route = "lamparas/{style}",
+            arguments = listOf(navArgument("style") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val style = Uri.decode(backStackEntry.arguments?.getString("style").orEmpty())
+            PantallaLamparas(navController, style)
         }
 
         // Visor AR con parámetro opcional modelUrl
