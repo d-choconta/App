@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.google.firebase.auth.FirebaseAuth
 import com.decoraia.app.ui.screens.*
+import com.decoraia.app.ui.screens.PantallaSofa
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -26,8 +27,8 @@ fun AppNavGraph(navController: NavHostController) {
         composable("chatia") { PantallaChatIA(navController) }
         composable("configuracion") { PantallaConfiguracion(navController) }
         composable("descripcion") { PantallaDescripcion(navController) }
-        composable("editarperfil") { PantallaEditarPerfil(navController) } // ✅ deja solo una
-        composable("favoritos") { PantallaFavoritos(navController) }       // ✅ existe esta ruta
+        composable("editarperfil") { PantallaEditarPerfil(navController) }
+        composable("favoritos") { PantallaFavoritos(navController) }
         composable("inicio") { PantallaInicio(navController) }
         composable("login") { PantallaLogin(navController) }
         composable("mensajesalida") { PantallaMensajeSalida(navController) }
@@ -37,7 +38,9 @@ fun AppNavGraph(navController: NavHostController) {
         composable("registro") { PantallaRegistro(navController) }
         composable("salidaperfil") { PantallaSalidaPerfil(navController) }
         composable("soporte") { PantallaSoporte(navController) }
-        composable("visualizacion") { PantallaVisualizacion(navController) }
+
+        // Puedes conservar esta ruta directa si la usas en otro lado
+        composable("visualizacion") { PantallaVisualizacion(navController, modelUrl = null) }
 
         // RA Estilos (sin args)
         composable("raestilos") { PantallaRAEstilos(navController) }
@@ -64,7 +67,16 @@ fun AppNavGraph(navController: NavHostController) {
             PantallaRAModelos(navController, style = style, categoryId = categoryId)
         }
 
-        // Visor AR opcional
+        // Sofá (nueva pantalla)
+        composable(
+            route = "sofa/{style}",
+            arguments = listOf(navArgument("style") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val style = Uri.decode(backStackEntry.arguments?.getString("style").orEmpty())
+            PantallaSofa(navController, style = style)
+        }
+
+        // Visor AR con parámetro opcional modelUrl
         composable(
             route = "arviewer?modelUrl={modelUrl}",
             arguments = listOf(
@@ -74,8 +86,9 @@ fun AppNavGraph(navController: NavHostController) {
                     defaultValue = null
                 }
             )
-        ) {
-            PantallaVisualizacion(navController)
+        ) { backStackEntry ->
+            val modelUrl = backStackEntry.arguments?.getString("modelUrl")
+            PantallaVisualizacion(navController, modelUrl = modelUrl)
         }
     }
 }

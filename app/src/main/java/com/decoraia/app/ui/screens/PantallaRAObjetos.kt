@@ -20,8 +20,22 @@ fun PantallaRAObjetos(
         onBack = { nav.popBackStack() },
         onSelectCategoria = { cat ->
             val encodedStyle = Uri.encode(style)
-            nav.navigate("ramodelos/$encodedStyle/${cat.id}")
-        },
+
+            // id tal como viene del repo
+            val id = cat.id
+            val idLower = id.lowercase()
+
+            // Si el id es "sofa" (o viene con acento / variantes)
+            if (idLower == "sofa" || idLower == "sofá" || idLower.contains("sofa")) {
+                nav.navigate("sofa/$encodedStyle")
+            } else {
+                // resto de categorías: ruta existente
+                nav.navigate("ramodelos/$encodedStyle/$id")
+            }
+        }
+
+
+        ,
         onHome = { nav.navigate("principal") { popUpTo("principal") { inclusive = true } } },
         onProfile = { nav.navigate("perfil") }
     )
