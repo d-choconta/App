@@ -11,14 +11,14 @@ android {
 
     defaultConfig {
         applicationId = "com.decoraia.app"
-        minSdk = 24
+        minSdk = 24          // ARCore requiere 24+
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Hace disponible tu API Key en BuildConfig.GEMINI_API_KEY
+        // Hace disponible tu API Key como BuildConfig.GEMINI_API_KEY
         buildConfigField(
             "String",
             "GEMINI_API_KEY",
@@ -36,16 +36,25 @@ android {
         }
     }
 
+    // Alineado con JDK 17
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    // Evita conflictos de licencias al empaquetar
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
 }
 
@@ -63,22 +72,31 @@ dependencies {
     implementation("androidx.compose.material:material-icons-core:1.6.7")
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
 
+    // ---- UI extra ----
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
     // ---- Generative AI (Gemini) ----
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
     // ---- Coroutines ----
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    // ---- Firebase ----
+    // ---- Firebase (BOM) ----
     implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
 
-    // ---- UI extra ----
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("io.coil-kt:coil-compose:2.6.0")
+    // ---- AR / RA ----
+    implementation("com.google.ar:core:1.48.0")
+    implementation("io.github.sceneview:sceneview:2.3.0")
+    implementation("io.github.sceneview:arsceneview:2.3.0")
+
+
+
+    // SceneView (AR para Android)
 
     // ---- Testing ----
     testImplementation(libs.junit)
