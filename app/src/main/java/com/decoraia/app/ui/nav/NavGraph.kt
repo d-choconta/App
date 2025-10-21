@@ -20,14 +20,33 @@ fun AppNavGraph(navController: NavHostController) {
         composable("acercade") { PantallaAcercaDe(navController) }
         composable("ajustescuenta") { PantallaAjustesCuenta(navController) }
         composable("carga") { PantallaCarga(navController) }
+
+        // Historial
         composable("chatguardados") { PantallaChatGuardados(navController) }
-        composable("chatguardadoseliminados") { PantallaChatGuardadosEliminados(navController) }
-        composable("chatguardadosopciones") { PantallaChatGuardadosOpciones(navController) }
-        composable("chatia") { PantallaChatIA(navController) }
+
+        // ---- CHAT ----
+        // 1) Chat nuevo (sin id); la primera vez que envíes mensaje, creas la sesión
+        composable("chatia") {
+            // Asegúrate que PantallaChatIA acepte chatId opcional
+            // fun PantallaChatIA(navController: NavController, chatId: String? = null)
+            PantallaChatIA(navController = navController, chatId = null)
+        }
+
+
+        // 2) Chat existente (con id)
+        composable(
+            route = "chatia/{sessionId}",
+            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val sessionId = backStackEntry.arguments?.getString("sessionId")!!
+            PantallaChatIA(navController = navController, chatId = sessionId)
+        }
+        // ---- FIN CHAT ----
+
         composable("configuracion") { PantallaConfiguracion(navController) }
         composable("descripcion") { PantallaDescripcion(navController) }
-        composable("editarperfil") { PantallaEditarPerfil(navController) } // ✅ deja solo una
-        composable("favoritos") { PantallaFavoritos(navController) }       // ✅ existe esta ruta
+        composable("editarperfil") { PantallaEditarPerfil(navController) }
+        composable("favoritos") { PantallaFavoritos(navController) }
         composable("inicio") { PantallaInicio(navController) }
         composable("login") { PantallaLogin(navController) }
         composable("mensajesalida") { PantallaMensajeSalida(navController) }
@@ -76,6 +95,6 @@ fun AppNavGraph(navController: NavHostController) {
             )
         ) {
             PantallaVisualizacion(navController)
+            }
         }
-    }
 }
