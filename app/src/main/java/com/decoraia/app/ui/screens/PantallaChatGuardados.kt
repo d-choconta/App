@@ -22,7 +22,7 @@ data class SessionItem(
     val lastMessageAt: Timestamp?
 )
 
-/** Borra la sesión y todos sus mensajes (subcolección "messages") en lotes de 500 */
+/** Borra la sesión y todos sus mensajes (subcolección "messages") en lotes de 450 */
 private fun deleteSessionCascade(
     db: FirebaseFirestore,
     sessionId: String,
@@ -52,7 +52,6 @@ private fun deleteSessionCascade(
         }
 }
 
-/** Formatea la fecha de manera breve */
 private fun formatDate(date: java.util.Date): String =
     java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm", java.util.Locale.getDefault())
         .format(date)
@@ -106,7 +105,6 @@ fun PantallaChatGuardados(navController: NavController) {
                     deletingIds += s.id
                     loading = sesiones.isEmpty()
 
-                    // Todo el proceso dentro de una corrutina
                     scope.launch {
                         deleteSessionCascade(
                             db = db,
@@ -118,7 +116,6 @@ fun PantallaChatGuardados(navController: NavController) {
                                 }
                                 deletingIds.remove(s.id)
                                 loading = false
-                                // 👇 Llama al snackbar desde una corrutina
                                 scope.launch { snackbar.showSnackbar(msg) }
                             },
                             onSuccess = {
@@ -128,8 +125,6 @@ fun PantallaChatGuardados(navController: NavController) {
                         )
                     }
                 }) { Text("Eliminar") }
-
-
             },
             dismissButton = {
                 TextButton(onClick = { sessionToDelete = null }) { Text("Cancelar") }
@@ -205,6 +200,6 @@ fun PantallaChatGuardados(navController: NavController) {
                     }
                 }
             }
-                }
         }
+    }
 }

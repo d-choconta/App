@@ -21,24 +21,23 @@ fun AppNavGraph(navController: NavHostController) {
         composable("ajustescuenta") { PantallaAjustesCuenta(navController) }
         composable("carga") { PantallaCarga(navController) }
 
-        // Historial
+        // Historial y variantes
         composable("chatguardados") { PantallaChatGuardados(navController) }
+        composable("chatguardadoseliminados") { PantallaChatGuardadosEliminados(navController) }
+        composable("chatguardadosopciones") { PantallaChatGuardadosOpciones(navController) }
 
         // ---- CHAT ----
-        // 1) Chat nuevo (sin id); la primera vez que envíes mensaje, creas la sesión
+        // Chat nuevo (sin id)
         composable("chatia") {
-            // Asegúrate que PantallaChatIA acepte chatId opcional
-            // fun PantallaChatIA(navController: NavController, chatId: String? = null)
             PantallaChatIA(navController = navController, chatId = null)
         }
 
-
-        // 2) Chat existente (con id)
+        // Chat existente (con id)
         composable(
             route = "chatia/{sessionId}",
             arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val sessionId = backStackEntry.arguments?.getString("sessionId")!!
+            val sessionId = backStackEntry.arguments?.getString("sessionId")
             PantallaChatIA(navController = navController, chatId = sessionId)
         }
         // ---- FIN CHAT ----
@@ -58,7 +57,7 @@ fun AppNavGraph(navController: NavHostController) {
         composable("soporte") { PantallaSoporte(navController) }
         composable("visualizacion") { PantallaVisualizacion(navController) }
 
-        // RA Estilos (sin args)
+        // RA Estilos
         composable("raestilos") { PantallaRAEstilos(navController) }
 
         // RA Objetos (recibe estilo)
@@ -95,6 +94,6 @@ fun AppNavGraph(navController: NavHostController) {
             )
         ) {
             PantallaVisualizacion(navController)
-            }
         }
+    }
 }

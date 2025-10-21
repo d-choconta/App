@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -33,7 +34,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.launch
 import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.layout.ContentScale
 import androidx.core.content.FileProvider
 import java.io.File
 
@@ -62,7 +62,6 @@ fun PantallaChatIA(
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
     val listState = rememberLazyListState()
-
     val context = LocalContext.current
 
     // ---- Adjuntos (imagen) ----
@@ -83,6 +82,7 @@ fun PantallaChatIA(
     ) { success ->
         if (success) selectedImage = tempCameraUri
     }
+
     val requestCameraPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -109,6 +109,7 @@ fun PantallaChatIA(
         if (chatId != null) {
             // 👉 Abrir chat existente
             sessionId = chatId
+
             db.collection("sessions").document(chatId)
                 .collection("messages")
                 .orderBy("createdAt", Query.Direction.ASCENDING)
@@ -132,7 +133,7 @@ fun PantallaChatIA(
             db.collection("sessions")
                 .add(
                     mapOf(
-                        "ownerId" to uid, // reglas
+                        "ownerId" to uid,
                         "title" to "Nueva conversación",
                         "createdAt" to Timestamp.now(),
                         "lastMessageAt" to Timestamp.now(),
@@ -361,7 +362,7 @@ private fun enviarMensajeConAdjunto(
 
     val sessionRef = db.collection("sessions").document(sessionId)
 
-    // 1) UI: agrega el mensaje del usuario (si hay texto)
+    // 1) Agrega mensaje del usuario
     if (texto.isNotBlank()) {
         listaMensajes.add(MensajeIA(texto = texto, esUsuario = true))
         sessionRef.collection("messages").add(
@@ -373,26 +374,23 @@ private fun enviarMensajeConAdjunto(
         )
         setTitleIfNeeded(texto)
     } else {
-        // título desde imagen
         setTitleIfNeeded("Imagen")
     }
 
-    // 2) También guardamos el adjunto si existe (solo la URI local; si quieres Storage, lo subimos luego)
+    // 2) Guarda adjunto si existe
     if (imageUri != null) {
         sessionRef.collection("messages").add(
             mapOf(
                 "role" to "user",
                 "imageUri" to imageUri.toString(),
-                "text" to texto, // opcional
+                "text" to texto,
                 "createdAt" to Timestamp.now()
             )
         )
     }
 
-    // Actualiza el lastMessageAt
     sessionRef.update("lastMessageAt", Timestamp.now())
 
-    // 3) Llamar a Gemini
     val handleAssistant: (String) -> Unit = { respuesta ->
         listaMensajes.add(MensajeIA(texto = respuesta, esUsuario = false))
         onDone()
@@ -413,9 +411,6 @@ private fun enviarMensajeConAdjunto(
 
     try {
         if (imageUri != null) {
-            // Si tienes implementado en tu GeminiService:
-            // GeminiService.askGeminiWithImage(context, imageUri, texto.ifBlank { "Describe la imagen" }, handleAssistant)
-            // Fallback a solo texto si aún no tienes la función con imagen:
             GeminiService.askGemini(
                 if (texto.isBlank()) "Analiza esta imagen" else texto
             ) { handleAssistant(it) }
