@@ -19,7 +19,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+<<<<<<< HEAD
 import androidx.compose.ui.layout.ContentScale
+=======
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -34,6 +37,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.launch
 import androidx.compose.ui.focus.FocusManager
+<<<<<<< HEAD
+=======
+import androidx.compose.ui.layout.ContentScale
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
 import androidx.core.content.FileProvider
 import java.io.File
 
@@ -94,6 +101,37 @@ fun PantallaChatIA(
         }
     }
 
+    val context = LocalContext.current
+
+    // ---- Adjuntos (imagen) ----
+    var selectedImage by remember { mutableStateOf<Uri?>(null) }
+    var showAttachMenu by remember { mutableStateOf(false) }
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Gallery
+    val pickFromGallery = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) selectedImage = uri
+    }
+
+    // Cámara
+    val takePhoto = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) selectedImage = tempCameraUri
+    }
+    val requestCameraPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            tempCameraUri = createTempImageUri(context)
+            tempCameraUri?.let { takePhoto.launch(it) }
+        } else {
+            scope.launch { snackbarHostState.showSnackbar("Permiso de cámara denegado") }
+        }
+    }
+
     // Estado de la sesión en Firestore
     var sessionId by remember { mutableStateOf<String?>(null) }
     var pusoTitulo by remember { mutableStateOf(false) }
@@ -109,7 +147,10 @@ fun PantallaChatIA(
         if (chatId != null) {
             // 👉 Abrir chat existente
             sessionId = chatId
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
             db.collection("sessions").document(chatId)
                 .collection("messages")
                 .orderBy("createdAt", Query.Direction.ASCENDING)
@@ -133,7 +174,11 @@ fun PantallaChatIA(
             db.collection("sessions")
                 .add(
                     mapOf(
+<<<<<<< HEAD
                         "ownerId" to uid,
+=======
+                        "ownerId" to uid, // reglas
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
                         "title" to "Nueva conversación",
                         "createdAt" to Timestamp.now(),
                         "lastMessageAt" to Timestamp.now(),
@@ -362,7 +407,11 @@ private fun enviarMensajeConAdjunto(
 
     val sessionRef = db.collection("sessions").document(sessionId)
 
+<<<<<<< HEAD
     // 1) Agrega mensaje del usuario
+=======
+    // 1) UI: agrega el mensaje del usuario (si hay texto)
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
     if (texto.isNotBlank()) {
         listaMensajes.add(MensajeIA(texto = texto, esUsuario = true))
         sessionRef.collection("messages").add(
@@ -374,6 +423,7 @@ private fun enviarMensajeConAdjunto(
         )
         setTitleIfNeeded(texto)
     } else {
+<<<<<<< HEAD
         setTitleIfNeeded("Imagen")
     }
 
@@ -391,6 +441,28 @@ private fun enviarMensajeConAdjunto(
 
     sessionRef.update("lastMessageAt", Timestamp.now())
 
+=======
+        // título desde imagen
+        setTitleIfNeeded("Imagen")
+    }
+
+    // 2) También guardamos el adjunto si existe (solo la URI local; si quieres Storage, lo subimos luego)
+    if (imageUri != null) {
+        sessionRef.collection("messages").add(
+            mapOf(
+                "role" to "user",
+                "imageUri" to imageUri.toString(),
+                "text" to texto, // opcional
+                "createdAt" to Timestamp.now()
+            )
+        )
+    }
+
+    // Actualiza el lastMessageAt
+    sessionRef.update("lastMessageAt", Timestamp.now())
+
+    // 3) Llamar a Gemini
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
     val handleAssistant: (String) -> Unit = { respuesta ->
         listaMensajes.add(MensajeIA(texto = respuesta, esUsuario = false))
         onDone()
@@ -411,6 +483,12 @@ private fun enviarMensajeConAdjunto(
 
     try {
         if (imageUri != null) {
+<<<<<<< HEAD
+=======
+            // Si tienes implementado en tu GeminiService:
+            // GeminiService.askGeminiWithImage(context, imageUri, texto.ifBlank { "Describe la imagen" }, handleAssistant)
+            // Fallback a solo texto si aún no tienes la función con imagen:
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
             GeminiService.askGemini(
                 if (texto.isBlank()) "Analiza esta imagen" else texto
             ) { handleAssistant(it) }

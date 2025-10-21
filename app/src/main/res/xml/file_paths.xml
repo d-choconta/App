@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="images" path="images/" />
+<<<<<<< HEAD
     <external-files-path name="ext_pictures" path="Pictures/"/>
 </paths>
+=======
+    <external-files-path name="ext_pictures" path="Pictures/" />
+</paths>
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))

@@ -22,7 +22,11 @@ data class SessionItem(
     val lastMessageAt: Timestamp?
 )
 
+<<<<<<< HEAD
 /** Borra la sesión y todos sus mensajes (subcolección "messages") en lotes de 450 */
+=======
+/** Borra la sesión y todos sus mensajes (subcolección "messages") en lotes de 500 */
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
 private fun deleteSessionCascade(
     db: FirebaseFirestore,
     sessionId: String,
@@ -52,6 +56,10 @@ private fun deleteSessionCascade(
         }
 }
 
+<<<<<<< HEAD
+=======
+/** Formatea la fecha de manera breve */
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
 private fun formatDate(date: java.util.Date): String =
     java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm", java.util.Locale.getDefault())
         .format(date)
@@ -105,6 +113,10 @@ fun PantallaChatGuardados(navController: NavController) {
                     deletingIds += s.id
                     loading = sesiones.isEmpty()
 
+<<<<<<< HEAD
+=======
+                    // Todo el proceso dentro de una corrutina
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
                     scope.launch {
                         deleteSessionCascade(
                             db = db,
@@ -116,6 +128,10 @@ fun PantallaChatGuardados(navController: NavController) {
                                 }
                                 deletingIds.remove(s.id)
                                 loading = false
+<<<<<<< HEAD
+=======
+                                // 👇 Llama al snackbar desde una corrutina
+>>>>>>> 8c41c57 (Historial de chat e imagenes Valery y Carol,(por lo que no se puede hacer commit))
                                 scope.launch { snackbar.showSnackbar(msg) }
                             },
                             onSuccess = {
@@ -125,7 +141,9 @@ fun PantallaChatGuardados(navController: NavController) {
                         )
                     }
                 }) { Text("Eliminar") }
-            },
+
+
+    },
             dismissButton = {
                 TextButton(onClick = { sessionToDelete = null }) { Text("Cancelar") }
             }
