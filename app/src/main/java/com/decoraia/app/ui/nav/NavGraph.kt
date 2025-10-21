@@ -13,18 +13,20 @@ import com.decoraia.app.ui.screens.*
 @Composable
 fun AppNavGraph(navController: NavHostController) {
     val auth = FirebaseAuth.getInstance()
-    val start = if (auth.currentUser != null) "principal" else "carga"
+    val startDestination = if (auth.currentUser != null) "principal" else "carga"
 
-    NavHost(navController = navController, startDestination = start) {
+    NavHost(
+        navController = navController,
+        startDestination = startDestination
+    ) {
 
+        // Secciones generales
         composable("acercade") { PantallaAcercaDe(navController) }
         composable("ajustescuenta") { PantallaAjustesCuenta(navController) }
         composable("carga") { PantallaCarga(navController) }
 
         // Historial y variantes
         composable("chatguardados") { PantallaChatGuardados(navController) }
-        composable("chatguardadoseliminados") { PantallaChatGuardadosEliminados(navController) }
-        composable("chatguardadosopciones") { PantallaChatGuardadosOpciones(navController) }
 
         // ---- CHAT ----
         // Chat nuevo (sin id)
@@ -40,8 +42,10 @@ fun AppNavGraph(navController: NavHostController) {
             val sessionId = backStackEntry.arguments?.getString("sessionId")
             PantallaChatIA(navController = navController, chatId = sessionId)
         }
+
         // ---- FIN CHAT ----
 
+        // Navegación general
         composable("configuracion") { PantallaConfiguracion(navController) }
         composable("descripcion") { PantallaDescripcion(navController) }
         composable("editarperfil") { PantallaEditarPerfil(navController) }
