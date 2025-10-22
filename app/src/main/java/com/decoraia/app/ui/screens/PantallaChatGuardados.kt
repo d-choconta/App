@@ -1,13 +1,20 @@
 ﻿package com.decoraia.app.ui.screens
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.decoraia.app.ui.components.ChatGuardadosUI
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import androidx.compose.material3.SnackbarHostState
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.Arrangement
 
 data class SessionItem(
     val id: String,
@@ -15,6 +22,7 @@ data class SessionItem(
     val lastMessageAt: Timestamp?
 )
 
+/** Borra la sesión y todos sus mensajes (subcolección "messages") en lotes de 500 */
 private fun deleteSessionCascade(
     db: FirebaseFirestore,
     sessionId: String,
@@ -44,14 +52,15 @@ private fun deleteSessionCascade(
         }
 }
 
+/** Formatea la fecha de manera breve */
 private fun formatDate(date: java.util.Date): String =
     java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm", java.util.Locale.getDefault())
         .format(date)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaChatGuardados(navController: NavController) {
-    val db = remember { FirebaseFirestore.getInstance() }
-
+    val db = FirebaseFirestore.getInstance()
     val sesiones = remember { mutableStateListOf<SessionItem>() }
     val deletingIds = remember { mutableStateListOf<String>() }
     var loading by remember { mutableStateOf(true) }
@@ -59,6 +68,7 @@ fun PantallaChatGuardados(navController: NavController) {
     val scope = rememberCoroutineScope()
     var sessionToDelete by remember { mutableStateOf<SessionItem?>(null) }
 
+    // Escucha en tiempo real
     LaunchedEffect(Unit) {
         db.collection("sessions")
             .orderBy("lastMessageAt", Query.Direction.DESCENDING)
@@ -79,59 +89,122 @@ fun PantallaChatGuardados(navController: NavController) {
             }
     }
 
-    fun openSession(id: String) {
-        navController.navigate("chatia/$id")
-    }
-    fun requestDelete(s: SessionItem) { sessionToDelete = s }
-    fun confirmDelete() {
-        val s = sessionToDelete ?: return
-        sessionToDelete = null
+    // Diálogo confirmación eliminar
+    if (sessionToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { sessionToDelete = null },
+            title = { Text("Eliminar chat") },
+            text = { Text("Esta acción borrará el chat y todos sus mensajes. ¿Deseas continuar?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val s = sessionToDelete ?: return@TextButton
+                    sessionToDelete = null
 
-        val idx = sesiones.indexOfFirst { it.id == s.id }
-        val backupItem = if (idx >= 0) sesiones.removeAt(idx) else null
-        deletingIds += s.id
-        loading = sesiones.isEmpty()
+                    // 🔥 UI optimista
+                    val idx = sesiones.indexOfFirst { it.id == s.id }
+                    val backupItem = if (idx >= 0) sesiones.removeAt(idx) else null
+                    deletingIds += s.id
+                    loading = sesiones.isEmpty()
 
-        deleteSessionCascade(
-            db = db,
-            sessionId = s.id,
-            onError = { msg ->
-                if (backupItem != null && sesiones.none { it.id == backupItem.id }) {
-                    sesiones.add(idx.coerceAtMost(sesiones.size), backupItem)
-                }
-                deletingIds.remove(s.id)
-                loading = false
-                scope.launch { snackbar.showSnackbar(msg) }
+                    // Todo el proceso dentro de una corrutina
+                    scope.launch {
+                        deleteSessionCascade(
+                            db = db,
+                            sessionId = s.id,
+                            onError = { msg ->
+                                // restaurar si falla
+                                if (backupItem != null && sesiones.none { it.id == backupItem.id }) {
+                                    sesiones.add(idx.coerceAtMost(sesiones.size), backupItem)
+                                }
+                                deletingIds.remove(s.id)
+                                loading = false
+                                // 👇 Llama al snackbar desde una corrutina
+                                scope.launch { snackbar.showSnackbar(msg) }
+                            },
+                            onSuccess = {
+                                deletingIds.remove(s.id)
+                                loading = false
+                            }
+                        )
+                    }
+                }) { Text("Eliminar") }
+
+
             },
-            onSuccess = {
-                deletingIds.remove(s.id)
-                loading = false
+            dismissButton = {
+                TextButton(onClick = { sessionToDelete = null }) { Text("Cancelar") }
             }
         )
     }
 
-    val dateFormatter: (Timestamp?) -> String = { ts ->
-        ts?.toDate()?.let { formatDate(it) } ?: "—"
-    }
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
+        topBar = { TopAppBar(title = { Text("Historial de chats") }) }
+    ) { padding ->
+        when {
+            loading -> Box(
+                Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
 
-    // Sin Scaffold externo: tu UI ya lo maneja internamente
-    ChatGuardadosUI(
-        sessions = sesiones,
-        loading = loading,
-        deletingIds = deletingIds.toSet(),
-        sessionToDelete = sessionToDelete,
-        onBack = { navController.popBackStack() },
-        onHome = {
-            navController.navigate("principal") {
-                popUpTo(0) { inclusive = true }
+            sesiones.isEmpty() -> Box(
+                Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center
+            ) { Text("No hay chats aún") }
+
+            else -> LazyColumn(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(sesiones, key = { it.id }) { s ->
+                    val isDeleting = deletingIds.contains(s.id)
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = !isDeleting) {
+                                navController.navigate("chatia/${s.id}")
+                            }
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text(s.title, style = MaterialTheme.typography.titleMedium)
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                text = s.lastMessageAt?.toDate()?.let { formatDate(it) } ?: "—",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Button(
+                                    onClick = { navController.navigate("chatia/${s.id}") },
+                                    enabled = !isDeleting
+                                ) { Text("Abrir") }
+
+                                Spacer(Modifier.width(8.dp))
+
+                                OutlinedButton(
+                                    onClick = { sessionToDelete = s },
+                                    enabled = !isDeleting
+                                ) {
+                                    Text(if (isDeleting) "Eliminando…" else "Eliminar")
+                                }
+
+                                if (isDeleting) {
+                                    Spacer(Modifier.width(8.dp))
+                                    CircularProgressIndicator(
+                                        strokeWidth = 2.dp,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        },
-        onProfile = { navController.navigate("perfil") },
-        onOpen = { openSession(it.id) },
-        onAskDelete = { requestDelete(it) },
-        onConfirmDelete = { confirmDelete() },
-        onDismissDelete = { sessionToDelete = null },
-        dateFormatter = dateFormatter,
-        snackbarHostState = snackbar
-    )
+                }
+        }
 }
