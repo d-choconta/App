@@ -1,3 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">App</string>
+
+    <!-- App -->
+    <string name="app_name">DecoraIA</string>
+
+    <!-- Acciones -->
+    <string name="action_back">Volver</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_open">Abrir</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_deleting">Eliminando…</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_history">Historial</string>
+    <string name="action_gallery">Galería</string>
+    <string name="action_camera">Cámara</string>
+    <string name="action_remove">Quitar</string>
+    <string name="action_login">Iniciar Sesión</string>
+    <string name="action_get_started">Empecemos</string>
+    <string name="action_exit">Salir</string>
+
+    <!-- Placeholders / varios -->
+    <string name="ph_write_message">Escribe tu mensaje...</string>
+    <string name="one_image_attached">1 imagen adjunta</string>
+    <string name="msg_writing">Escribiendo…</string>
+    <string name="msg_no_chats">No hay chats aún</string>
+    <string name="date_dash">—</string>
+    <string name="untitled">Sin título</string>
+    <string name="err_prefix">Error: %1$s</string>
+    <string name="err_unknown">Error desconocido</string>
+
+    <!-- Acerca de -->
+    <string name="title_about">Acerca de</string>
+    <string name="about_description">DecoraIA App versión 1.0\nCreada por Carlos Vargas © 2025</string>
+
+    <!-- Ajustes / Configuración -->
+    <string name="title_account_settings">Ajustes de cuenta</string>
+    <string name="lbl_nombre">Nombre</string>
+    <string name="lbl_telefono">Teléfono</string>
+    <string name="title_settings">Configuración</string>
+    <string name="lbl_notifications">Notificaciones</string>
+
+    <!-- Chat Guardados -->
+    <string name="title_chat_history">Historial de chats</string>
+    <string name="dlg_delete_chat_title">Eliminar chat</string>
+    <string name="dlg_delete_chat_text">Esta acción borrará el chat y todos sus mensajes. ¿Deseas continuar?</string>
+
+    <!-- Login / Validaciones -->
+    <string name="app_revisa_campos">Revisa los campos marcados en rojo</string>
+    <string name="app_sin_sesion">No hay sesión activa</string>
+    <string name="val_email_requerido">Ingresa tu correo.</string>
+    <string name="val_email_invalido">Correo no válido (ej: usuario@dominio.com).</string>
+    <string name="val_pass_requerida">Ingresa tu contraseña.</string>
+    <string name="val_pass_min">Mínimo 6 caracteres.</string>
+
+    <!-- Registro / Validaciones -->
+    <string name="val_nombre_requerido">Ingresa tu nombre.</string>
+    <string name="val_nombre_corto">El nombre es muy corto.</string>
+    <string name="val_confirm_requerida">Repite la contraseña.</string>
+    <string name="val_pass_no_coincide">Las contraseñas no coinciden.</string>
+
+    <!-- Errores Firebase Auth (comunes y registro) -->
+    <string name="auth_error_correo_invalido">El correo no es válido.</string>
+    <string name="auth_error_usuario_no_existe">No existe una cuenta con ese correo.</string>
+    <string name="auth_error_contrasena_incorrecta">Contraseña incorrecta.</string>
+    <string name="auth_error_usuario_deshabilitado">La cuenta está deshabilitada.</string>
+    <string name="auth_error_demasiados_intentos">Demasiados intentos. Intenta más tarde.</string>
+    <string name="auth_error_red">Sin conexión. Revisa tu internet.</string>
+    <string name="auth_error_credenciales">Las credenciales son incorrectas o han expirado.</string>
+    <string name="auth_error_generico">Ocurrió un error. Intenta nuevamente.</string>
+    <string name="auth_login_ok_perfil_error">Sesión iniciada, pero no se pudo actualizar tu perfil.</string>
+
+    <!-- Registro / errores específicos -->
+    <string name="reg_error_email_en_uso">Ese correo ya está registrado.</string>
+    <string name="reg_error_operacion_no_permitida">El registro está deshabilitado.</string>
+    <string name="reg_error_contrasena_debil">La contraseña es muy débil.</string>
+    <string name="reg_error_usuario_nulo">No se pudo crear la cuenta.</string>
+    <string name="reg_cuenta_creada_pero_perfil_error">Cuenta creada, pero no se pudo guardar tu perfil: %1$s</string>
+
+    <!-- Labels comunes -->
+    <string name="lbl_correo">Correo electrónico</string>
+    <string name="lbl_contrasena">Contraseña</string>
+    <string name="lbl_usuario">Usuario</string>
+    <string name="lbl_enviar_codigo">Enviar código</string>
+    <string name="lbl_registrar">Registrar</string>
+    <string name="lbl_ingresar">Ingresar</string>
+    <string name="lbl_olvidaste_contrasena">¿Olvidaste tu contraseña?</string>
+    <string name="lbl_ya_tienes_cuenta">¿Ya tienes una cuenta?</string>
+
+    <!-- Olvido de contraseña -->
+    <string name="pwd_reset_sent">Te enviamos un correo para restablecer tu contraseña.</string>
+
+    <!-- Chat IA -->
+    <string name="req_login_to_chat">Debes iniciar sesión para chatear</string>
+    <string name="perm_camera_denied">Permiso de cámara denegado</string>
+    <string name="err_loading_messages">Error cargando mensajes: %1$s</string>
+    <string name="chat_new_conversation">Nueva conversación</string>
+    <string name="ai_title_image">Imagen</string>
+    <string name="ai_analyze_image_fallback">Analiza esta imagen</string>
+
+    <!-- Editar perfil -->
+    <string name="err_load_profile">No se pudieron cargar tus datos</string>
+    <string name="msg_profile_pw_updated">Perfil y contraseña actualizados</string>
+    <string name="msg_profile_saved_pw_error">Perfil guardado. Error al cambiar contraseña: %1$s</string>
+    <string name="msg_profile_updated">Perfil actualizado</string>
+    <string name="err_profile_save">Error al guardar: %1$s</string>
+
+    <!-- Favoritos -->
+    <string name="title_favorites">Favoritos</string>
+    <string name="msg_no_favorites">Aún no tienes favoritos.</string>
+    <string name="req_login_favorites">Debes iniciar sesión para ver favoritos.</string>
+
+    <!-- Confirmación salida -->
+    <string name="exit_confirm_message">¿Estás seguro que quieres salir?</string>
+
+    <!-- RA estilos -->
+    <string-array name="styles_list">
+        <item>Clásico</item>
+        <item>Mediterráneo</item>
+        <item>Minimalista</item>
+        <item>Industrial</item>
+    </string-array>
+
+    <!-- Inicio / Visualización / Perfil / Soporte -->
+    <string name="visualizacion_titulo">Pantalla Visualización</string>
+    <string name="perfil_saliste">Has salido del perfil</string>
+    <string name="volver_al_inicio">Volver al inicio</string>
+    <string name="soporte_titulo">Soporte técnico</string>
+    <string name="soporte_describe_problema">Describe tu problema</string>
+    <string name="soporte_enviar_mensaje">Enviar mensaje</string>
+
+    <!-- Accesibilidad -->
+    <string name="cd_back">Atrás</string>
+    <string name="cd_home">Inicio</string>
+    <string name="cd_profile">Perfil</string>
+    <string name="cd_attach">Adjuntar</string>
+    <string name="cd_send">Enviar</string>
+    <string name="cd_remove_favorite">Quitar de favoritos</string>
+
 </resources>

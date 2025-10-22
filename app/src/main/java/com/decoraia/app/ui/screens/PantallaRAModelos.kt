@@ -17,7 +17,6 @@ fun PantallaRAModelos(
     style: String,
     categoryId: String
 ) {
-
     val categoria = remember(categoryId) {
         RAProductsRepo.categoriasFijas.firstOrNull { it.id == categoryId }
             ?: RAProductsRepo.categoriasFijas.first()
@@ -32,7 +31,6 @@ fun PantallaRAModelos(
     val db   = remember { FirebaseFirestore.getInstance() }
     val uid  = auth.currentUser?.uid
     var favoriteIds by remember { mutableStateOf(setOf<String>()) }
-
 
     LaunchedEffect(style, categoryId) {
         scope.launch {
@@ -52,7 +50,6 @@ fun PantallaRAModelos(
         }
     }
 
-
     DisposableEffect(uid) {
         var registration: ListenerRegistration? = null
         if (uid != null) {
@@ -67,9 +64,7 @@ fun PantallaRAModelos(
                     favoriteIds = ids
                 }
         }
-        onDispose {
-            registration?.remove()
-        }
+        onDispose { registration?.remove() }
     }
 
     fun toggleFavorite(prod: ProductoAR) {
@@ -90,9 +85,7 @@ fun PantallaRAModelos(
                     )
                     favsCol.add(data).await()
                 }
-            } catch (e: Exception) {
-
-            }
+            } catch (_: Exception) { }
         }
     }
 

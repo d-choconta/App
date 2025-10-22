@@ -40,9 +40,7 @@ fun PantallaPerfil(navController: NavController) {
         pais     = pais,
         onBack   = { navController.popBackStack() },
         onEdit   = { navController.navigate("editarperfil") },
-
         onFavoritos = { navController.navigate("favoritos") },
-
         onChats  = { navController.navigate("chatguardados") },
         onLogout = {
             auth.signOut()

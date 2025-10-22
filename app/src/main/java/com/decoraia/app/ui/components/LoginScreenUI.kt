@@ -9,18 +9,25 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -76,6 +83,8 @@ fun LoginScreenUI(
     passwordError: String? = null,
     authError: String? = null
 ) {
+    val passwordFocus = remember { FocusRequester() }
+
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
 
@@ -127,7 +136,6 @@ fun LoginScreenUI(
 
                 Spacer(Modifier.height(15.dp))
 
-                // Logo
                 Box(
                     modifier = Modifier.size(220.dp),
                     contentAlignment = Alignment.Center
@@ -155,6 +163,7 @@ fun LoginScreenUI(
                     onValueChange = onEmailChange,
                     singleLine = true,
                     isError = emailError != null,
+                    enabled = !loading,
                     supportingText = {
                         if (emailError != null) Text(emailError, color = ErrorRed, fontSize = 12.sp)
                     },
@@ -173,6 +182,13 @@ fun LoginScreenUI(
                             )
                         )
                     },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { passwordFocus.requestFocus() }
+                    ),
                     shape = RoundedCornerShape(22.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Graphite,
@@ -197,6 +213,7 @@ fun LoginScreenUI(
                     onValueChange = onPasswordChange,
                     singleLine = true,
                     isError = passwordError != null,
+                    enabled = !loading,
                     supportingText = {
                         if (passwordError != null) Text(passwordError, color = ErrorRed, fontSize = 12.sp)
                     },
@@ -216,6 +233,13 @@ fun LoginScreenUI(
                         )
                     },
                     visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { if (!loading) onLoginClick() }
+                    ),
                     shape = RoundedCornerShape(22.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Graphite,
@@ -229,12 +253,14 @@ fun LoginScreenUI(
                         errorLabelColor = ErrorRed,
                         errorCursorColor = ErrorRed
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(passwordFocus)
                 )
 
                 Spacer(Modifier.height(3.dp))
 
-                TextButton(onClick = onForgotClick, modifier = Modifier.align(Alignment.Start)) {
+                TextButton(onClick = onForgotClick, modifier = Modifier.align(Alignment.Start), enabled = !loading) {
                     Text(
                         "¿Olvidaste tu contraseña?",
                         color = Cocoa,
@@ -247,6 +273,7 @@ fun LoginScreenUI(
 
                 Button(
                     onClick = onLoginClick,
+                    enabled = !loading,
                     shape = RoundedCornerShape(26.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Terracotta,
@@ -280,7 +307,7 @@ fun LoginScreenUI(
 
                 Spacer(Modifier.height(16.dp))
 
-                TextButton(onClick = onRegisterClick) {
+                TextButton(onClick = onRegisterClick, enabled = !loading) {
                     Text(
                         "¿No tienes una cuenta?",
                         color = Cocoa,

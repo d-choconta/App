@@ -14,13 +14,10 @@ import kotlinx.coroutines.tasks.await
 
 @Composable
 fun PantallaFavoritos(nav: NavHostController) {
-
-    //Firebase
     val auth = remember { FirebaseAuth.getInstance() }
-    val db   = remember { FirebaseFirestore.getInstance() }
-    val uid  = auth.currentUser?.uid
+    val db = remember { FirebaseFirestore.getInstance() }
+    val uid = auth.currentUser?.uid
 
-    //Estado UI
     var loading by remember { mutableStateOf(true) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var modelos by remember { mutableStateOf(emptyList<ProductoAR>()) }
@@ -47,7 +44,7 @@ fun PantallaFavoritos(nav: NavHostController) {
         onDispose { reg?.remove() }
     }
 
-    LaunchedEffect(favoriteIds) {
+    LaunchedEffect(favoriteIds, uid) {
         if (uid == null) {
             loading = false
             errorMsg = "Debes iniciar sesión para ver favoritos."
@@ -77,11 +74,9 @@ fun PantallaFavoritos(nav: NavHostController) {
                 } else {
                     RAProductsRepo.addFavorite(currentUid, item)
                 }
-            } catch (_: Exception) {
-            }
+            } catch (_: Exception) { }
         }
     }
-
 
     FavoritosScreenUI(
         favoritos = modelos,
@@ -100,5 +95,4 @@ fun PantallaFavoritos(nav: NavHostController) {
         },
         onProfile = { nav.navigate("perfil") }
     )
-
 }

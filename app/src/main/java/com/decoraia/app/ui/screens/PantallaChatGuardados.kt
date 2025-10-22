@@ -1,18 +1,12 @@
 ﻿package com.decoraia.app.ui.screens
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.decoraia.app.ui.components.ChatGuardadosUI
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import androidx.compose.material3.SnackbarHostState
 import kotlinx.coroutines.launch
 
 data class SessionItem(
@@ -54,7 +48,6 @@ private fun formatDate(date: java.util.Date): String =
     java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm", java.util.Locale.getDefault())
         .format(date)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaChatGuardados(navController: NavController) {
     val db = remember { FirebaseFirestore.getInstance() }
@@ -64,10 +57,7 @@ fun PantallaChatGuardados(navController: NavController) {
     var loading by remember { mutableStateOf(true) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
-
     var sessionToDelete by remember { mutableStateOf<SessionItem?>(null) }
-
 
     LaunchedEffect(Unit) {
         db.collection("sessions")
@@ -89,20 +79,14 @@ fun PantallaChatGuardados(navController: NavController) {
             }
     }
 
-
     fun openSession(id: String) {
         navController.navigate("chatia/$id")
     }
-
-    fun requestDelete(s: SessionItem) {
-        sessionToDelete = s
-    }
-
+    fun requestDelete(s: SessionItem) { sessionToDelete = s }
     fun confirmDelete() {
         val s = sessionToDelete ?: return
         sessionToDelete = null
 
-        // UI optimista
         val idx = sesiones.indexOfFirst { it.id == s.id }
         val backupItem = if (idx >= 0) sesiones.removeAt(idx) else null
         deletingIds += s.id
@@ -112,7 +96,6 @@ fun PantallaChatGuardados(navController: NavController) {
             db = db,
             sessionId = s.id,
             onError = { msg ->
-                // restaurar si falla
                 if (backupItem != null && sesiones.none { it.id == backupItem.id }) {
                     sesiones.add(idx.coerceAtMost(sesiones.size), backupItem)
                 }
@@ -127,13 +110,12 @@ fun PantallaChatGuardados(navController: NavController) {
         )
     }
 
-    // Formateador de fecha para la UI
     val dateFormatter: (Timestamp?) -> String = { ts ->
         ts?.toDate()?.let { formatDate(it) } ?: "—"
     }
 
-    // Render UI
-    com.decoraia.app.ui.components.ChatGuardadosUI(
+    // Sin Scaffold externo: tu UI ya lo maneja internamente
+    ChatGuardadosUI(
         sessions = sesiones,
         loading = loading,
         deletingIds = deletingIds.toSet(),
@@ -151,5 +133,5 @@ fun PantallaChatGuardados(navController: NavController) {
         onDismissDelete = { sessionToDelete = null },
         dateFormatter = dateFormatter,
         snackbarHostState = snackbar
-        )
+    )
 }

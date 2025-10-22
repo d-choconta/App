@@ -4,7 +4,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import com.decoraia.app.ui.components.PantallaEditarPerfilUI
 import com.google.firebase.auth.FirebaseAuth
@@ -28,7 +27,6 @@ fun PantallaEditarPerfil(navController: NavController) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Carga inicial
     LaunchedEffect(uid) {
         cargando = true
         if (uid != null) {
@@ -92,9 +90,9 @@ fun PantallaEditarPerfil(navController: NavController) {
 
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { _ ->
         PantallaEditarPerfilUI(
-            nombre = nombre,      onNombre = { nombre = it },
-            celular = celular,    onCelular = { celular = it },
-            pais = pais,          onPais = { pais = it },
+            nombre = nombre, onNombre = { nombre = it },
+            celular = celular, onCelular = { celular = it },
+            pais = pais, onPais = { pais = it },
             password = nuevaPassword, onPassword = { nuevaPassword = it },
             loading = cargando,
             onGuardar = { guardar() },
@@ -104,6 +102,6 @@ fun PantallaEditarPerfil(navController: NavController) {
                     popUpTo(0) { inclusive = true }
                 }
             }
-            )
-        }
+        )
+    }
 }

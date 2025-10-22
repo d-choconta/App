@@ -5,8 +5,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.decoraia.app.R
 
 @Composable
 fun PantallaAcercaDe(navController: NavController) {
@@ -17,12 +19,12 @@ fun PantallaAcercaDe(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Acerca de", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.title_about), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
-        Text("DecoraIA App versión 1.0\nCreada por Carlos Vargas © 2025")
+        Text(stringResource(R.string.about_description))
         Spacer(Modifier.height(32.dp))
         Button(onClick = { navController.navigate("pantallaPrincipal") }) {
-            Text("Volver")
+            Text(stringResource(R.string.action_back))
         }
     }
 }

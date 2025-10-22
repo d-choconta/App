@@ -1,6 +1,5 @@
 package com.decoraia.app.ui.screens
 
-
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -25,6 +24,6 @@ class ChatViewModel : ViewModel() {
 
     fun reset() {
         messages.clear()
-        messages += ChatMessage(text = "Conversación reiniciada 😊", fromUser =false)
-        }
+        messages += ChatMessage(text = "Conversación reiniciada 😊", fromUser = false)
+    }
 }

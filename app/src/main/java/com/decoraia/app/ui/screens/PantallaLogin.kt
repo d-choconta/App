@@ -2,79 +2,91 @@
 
 package com.decoraia.app.ui.screens
 
-import android.util.Log
 import android.util.Patterns
+import android.util.Log
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import com.decoraia.app.ui.components.LoginScreenUI
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.decoraia.app.R
 
 @Composable
 fun PantallaLogin(navController: NavHostController) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
 
-    // errores por campo y general (solo texto, sin snackbar)
     var emailError by remember { mutableStateOf<String?>(null) }
     var passError  by remember { mutableStateOf<String?>(null) }
     var authError  by remember { mutableStateOf<String?>(null) }
 
     val auth = FirebaseAuth.getInstance()
-    val db = FirebaseFirestore.getInstance()
-
-    fun validarCampos(): Boolean {
-        emailError = when {
-            email.isBlank() -> "Ingresa tu correo."
-            !Patterns.EMAIL_ADDRESS.matcher(email).matches() ->
-                "Correo no válido (ej: usuario@dominio.com)."
-            else -> null
-        }
-        passError = when {
-            password.isBlank() -> "Ingresa tu contraseña."
-            password.length < 6 -> "Mínimo 6 caracteres."
-            else -> null
-        }
-        return emailError == null && passError == null
-    }
+    val db   = FirebaseFirestore.getInstance()
+    val res  = LocalContext.current.resources
 
     fun traducirErrorFirebase(t: Throwable): String {
         val code = (t as? FirebaseAuthException)?.errorCode ?: ""
         val msg  = t.message?.lowercase().orEmpty()
         return when (code) {
-            "ERROR_INVALID_EMAIL"              -> "El correo no es válido."
-            "ERROR_USER_NOT_FOUND"             -> "No existe una cuenta con ese correo."
-            "ERROR_WRONG_PASSWORD"             -> "Contraseña incorrecta."
-            "ERROR_USER_DISABLED"              -> "La cuenta está deshabilitada."
-            "ERROR_TOO_MANY_REQUESTS"          -> "Demasiados intentos. Intenta más tarde."
-            "ERROR_NETWORK_REQUEST_FAILED"     -> "Sin conexión. Revisa tu internet."
+            "ERROR_INVALID_EMAIL"          -> res.getString(R.string.auth_error_correo_invalido)
+            "ERROR_USER_NOT_FOUND"         -> res.getString(R.string.auth_error_usuario_no_existe)
+            "ERROR_WRONG_PASSWORD"         -> res.getString(R.string.auth_error_contrasena_incorrecta)
+            "ERROR_USER_DISABLED"          -> res.getString(R.string.auth_error_usuario_deshabilitado)
+            "ERROR_TOO_MANY_REQUESTS"      -> res.getString(R.string.auth_error_demasiados_intentos)
+            "ERROR_NETWORK_REQUEST_FAILED" -> res.getString(R.string.auth_error_red)
             "ERROR_INVALID_CREDENTIAL",
             "ERROR_INVALID_LOGIN_CREDENTIALS",
-            "INVALID_LOGIN_CREDENTIALS"        -> "Las credenciales son incorrectas o han expirado."
+            "INVALID_LOGIN_CREDENTIALS"    -> res.getString(R.string.auth_error_credenciales)
             else -> when {
                 "credential is incorrect" in msg || "credential is malformed" in msg || "has expired" in msg ->
-                    "Las credenciales son incorrectas o han expirado."
-                "password" in msg && "invalid" in msg -> "Contraseña incorrecta."
-                "blocked" in msg && "requests" in msg -> "Demasiados intentos. Intenta más tarde."
-                else -> t.message ?: "Ocurrió un error. Intenta nuevamente."
+                    res.getString(R.string.auth_error_credenciales)
+                "password" in msg && "invalid" in msg ->
+                    res.getString(R.string.auth_error_contrasena_incorrecta)
+                "blocked" in msg && "requests" in msg ->
+                    res.getString(R.string.auth_error_demasiados_intentos)
+                else -> t.message ?: res.getString(R.string.auth_error_generico)
             }
         }
     }
 
-    // Sin Scaffold/snackbar: llamamos directo a la UI
+    fun validarCampos(): Boolean {
+        emailError = when {
+            email.isBlank() -> res.getString(R.string.val_email_requerido)
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() ->
+                res.getString(R.string.val_email_invalido)
+            else -> null
+        }
+        passError = when {
+            password.isBlank()  -> res.getString(R.string.val_pass_requerida)
+            password.length < 6 -> res.getString(R.string.val_pass_min)
+            else -> null
+        }
+        return emailError == null && passError == null
+    }
+
     LoginScreenUI(
         email = email,
-        onEmailChange = { email = it; if (emailError != null) emailError = null; authError = null },
+        onEmailChange = {
+            email = it
+            if (emailError != null) emailError = null
+            if (authError != null) authError = null
+        },
         password = password,
-        onPasswordChange = { password = it; if (passError != null) passError = null; authError = null },
+        onPasswordChange = {
+            password = it
+            if (passError != null) passError = null
+            if (authError != null) authError = null
+        },
         loading = loading,
         onLoginClick = {
             authError = null
             if (!validarCampos()) {
-                authError = "Revisa los campos marcados en rojo"
+                authError = res.getString(R.string.app_revisa_campos)
                 return@LoginScreenUI
             }
 
@@ -84,7 +96,7 @@ fun PantallaLogin(navController: NavHostController) {
                     val uid = auth.currentUser?.uid
                     if (uid == null) {
                         loading = false
-                        authError = "No se pudo obtener tu sesión."
+                        authError = res.getString(R.string.app_sin_sesion)
                         return@addOnSuccessListener
                     }
                     db.collection("users").document(uid)
@@ -98,8 +110,7 @@ fun PantallaLogin(navController: NavHostController) {
                         .addOnFailureListener { e ->
                             loading = false
                             Log.e("LOGIN", "Error actualizando lastLogin: ${e.message}")
-                            // Igual navegamos, pero mostramos texto en rojo (sin snackbar)
-                            authError = "Sesión iniciada, pero no se pudo actualizar tu perfil."
+                            authError = res.getString(R.string.auth_login_ok_perfil_error)
                             navController.navigate("principal") {
                                 popUpTo("login") { inclusive = true }
                             }

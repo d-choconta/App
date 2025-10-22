@@ -19,7 +19,7 @@ fun PantallaRAObjetos(
         categorias = categorias,
         onBack = { nav.popBackStack() },
         onSelectCategoria = { cat ->
-            val encodedStyle = Uri.encode(style)
+            val encodedStyle = android.net.Uri.encode(style)
             nav.navigate("ramodelos/$encodedStyle/${cat.id}")
         },
         onHome = { nav.navigate("principal") { popUpTo("principal") { inclusive = true } } },

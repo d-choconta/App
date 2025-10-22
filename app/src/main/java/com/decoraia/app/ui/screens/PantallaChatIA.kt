@@ -3,26 +3,20 @@
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.decoraia.app.BuildConfig
+import com.decoraia.app.R
 import com.decoraia.app.ui.components.ChatIAScreenUI
 import com.decoraia.app.ui.components.ChatMessageUI
 import com.google.firebase.Timestamp
@@ -31,7 +25,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.io.File
 
 data class MensajeIA(
     val id: Long = System.nanoTime(),
@@ -58,7 +51,6 @@ fun PantallaChatIA(
     val keyboard = LocalSoftwareKeyboardController.current
     val context = LocalContext.current
 
-    //Adjuntos (imagen)
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -77,18 +69,17 @@ fun PantallaChatIA(
             tempCameraUri = createTempImageUri(context)
             tempCameraUri?.let { takePhoto.launch(it) }
         } else {
-            scope.launch { snackbarHostState.showSnackbar("Permiso de cámara denegado") }
+            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.perm_camera_denied)) }
         }
     }
 
-    // Estado de la sesión en Firestore
     var sessionId by remember { mutableStateOf<String?>(null) }
     var pusoTitulo by remember { mutableStateOf(false) }
 
     LaunchedEffect(chatId) {
         val uid = auth.currentUser?.uid
         if (uid == null) {
-            scope.launch { snackbarHostState.showSnackbar("Debes iniciar sesión para chatear") }
+            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.req_login_to_chat)) }
             return@LaunchedEffect
         }
 
@@ -110,12 +101,15 @@ fun PantallaChatIA(
                     }
                 }
                 .addOnFailureListener { e ->
-                    scope.launch { snackbarHostState.showSnackbar("Error cargando mensajes: ${e.message}") }
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            context.getString(R.string.err_loading_messages, e.message ?: "")
+                        )
+                    }
                 }
         }
     }
 
-    // Adaptación simple a tu UI de estilo
     val uiMessages: List<ChatMessageUI> =
         listaMensajes.mapIndexed { idx, m ->
             ChatMessageUI(
@@ -126,7 +120,6 @@ fun PantallaChatIA(
             )
         }
 
-    // ---- UI delegada a ChatIAScreenUI ----
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color.Transparent,
@@ -144,22 +137,20 @@ fun PantallaChatIA(
                 onAttachCamera  = { requestCameraPermission.launch(android.Manifest.permission.CAMERA) },
                 onRemoveAttachment = { selectedImage = null },
 
-                // Enviar: crea sesión si no existe y luego envía
                 onSend = {
                     scope.launch {
                         val uid = auth.currentUser?.uid
                         if (uid == null) {
-                            snackbarHostState.showSnackbar("Debes iniciar sesión para chatear")
+                            snackbarHostState.showSnackbar(context.getString(R.string.req_login_to_chat))
                             return@launch
                         }
 
                         val sid = sessionId ?: run {
-                            // crea la sesión SOLO ahora
                             val ref = db.collection("sessions")
                                 .add(
                                     mapOf(
                                         "ownerId" to uid,
-                                        "title" to "Nueva conversación",
+                                        "title" to context.getString(R.string.chat_new_conversation),
                                         "createdAt" to Timestamp.now(),
                                         "lastMessageAt" to Timestamp.now(),
                                         "active" to true
@@ -194,7 +185,6 @@ fun PantallaChatIA(
                     }
                 },
 
-                // Navegación (incluye HISTORIAL)
                 onBack = { navController?.popBackStack() },
                 onHistory = { navController?.navigate("chatguardados") },
                 onHome = {
@@ -215,7 +205,7 @@ private fun enviarMensajeConAdjunto(
     prompt: String,
     imageUri: Uri?,
     listaMensajes: MutableList<MensajeIA>,
-    focus: FocusManager,
+    focus: androidx.compose.ui.focus.FocusManager,
     onStart: () -> Unit,
     onDone: () -> Unit,
     onError: (String) -> Unit,
@@ -229,7 +219,6 @@ private fun enviarMensajeConAdjunto(
 
     val sessionRef = db.collection("sessions").document(sessionId)
 
-    // 1) Mensaje del usuario
     if (texto.isNotBlank()) {
         listaMensajes.add(MensajeIA(texto = texto, esUsuario = true))
         sessionRef.collection("messages").add(
@@ -241,10 +230,9 @@ private fun enviarMensajeConAdjunto(
         )
         setTitleIfNeeded(texto)
     } else {
-        setTitleIfNeeded("Imagen")
+        setTitleIfNeeded(context.getString(R.string.ai_title_image))
     }
 
-    // 2) Adjuntos
     if (imageUri != null) {
         sessionRef.collection("messages").add(
             mapOf(
@@ -258,7 +246,6 @@ private fun enviarMensajeConAdjunto(
 
     sessionRef.update("lastMessageAt", Timestamp.now())
 
-    // 3) Gemini
     val handleAssistant: (String) -> Unit = { respuesta ->
         listaMensajes.add(MensajeIA(texto = respuesta, esUsuario = false))
         onDone()
@@ -279,24 +266,22 @@ private fun enviarMensajeConAdjunto(
 
     try {
         if (imageUri != null) {
-            // si implementas askGeminiWithImage, úsala aquí
             GeminiService.askGemini(
-                if (texto.isBlank()) "Analiza esta imagen" else texto
+                if (texto.isBlank()) context.getString(R.string.ai_analyze_image_fallback) else texto
             ) { handleAssistant(it) }
         } else {
             GeminiService.askGemini(texto) { handleAssistant(it) }
         }
     } catch (e: Exception) {
         onDone()
-        onError(e.message ?: "Error desconocido")
+        onError(e.message ?: context.getString(R.string.err_unknown))
     }
 }
 
-/** Crea un Uri temporal para la foto de cámara */
 private fun createTempImageUri(context: android.content.Context): Uri {
-    val imagesDir = File(context.cacheDir, "images").apply { mkdirs() }
-    val file = File.createTempFile("camera_", ".jpg", imagesDir)
-    return FileProvider.getUriForFile(
+    val imagesDir = java.io.File(context.cacheDir, "images").apply { mkdirs() }
+    val file = java.io.File.createTempFile("camera_", ".jpg", imagesDir)
+    return androidx.core.content.FileProvider.getUriForFile(
         context,
         "${BuildConfig.APPLICATION_ID}.fileprovider",
         file

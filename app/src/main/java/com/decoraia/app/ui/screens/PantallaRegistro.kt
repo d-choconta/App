@@ -4,7 +4,9 @@ package com.decoraia.app.ui.screens
 
 import android.util.Patterns
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
+import com.decoraia.app.R
 import com.decoraia.app.ui.components.RegistroScreenUI
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
@@ -15,43 +17,42 @@ import com.google.firebase.firestore.SetOptions
 
 @Composable
 fun PantallaRegistro(navController: NavHostController) {
-    // Campos
     var nombre by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
 
-    // Errores por campo + mensaje general (bajo el botón)
     var nombreError  by remember { mutableStateOf<String?>(null) }
     var emailError   by remember { mutableStateOf<String?>(null) }
     var passError    by remember { mutableStateOf<String?>(null) }
     var confirmError by remember { mutableStateOf<String?>(null) }
     var actionError  by remember { mutableStateOf<String?>(null) }
 
+    val res  = LocalContext.current.resources
     val auth = FirebaseAuth.getInstance()
     val db   = FirebaseFirestore.getInstance()
 
     fun validar(): Boolean {
         nombreError = when {
-            nombre.isBlank()      -> "Ingresa tu nombre."
-            nombre.length < 2     -> "El nombre es muy corto."
-            else                  -> null
+            nombre.isBlank()  -> res.getString(R.string.val_nombre_requerido)
+            nombre.length < 2 -> res.getString(R.string.val_nombre_corto)
+            else              -> null
         }
         emailError = when {
-            email.isBlank() -> "Ingresa tu correo."
+            email.isBlank() -> res.getString(R.string.val_email_requerido)
             !Patterns.EMAIL_ADDRESS.matcher(email).matches() ->
-                "Correo no válido (ej: usuario@dominio.com)."
+                res.getString(R.string.val_email_invalido)
             else -> null
         }
         passError = when {
-            password.isBlank()  -> "Ingresa una contraseña."
-            password.length < 6 -> "Mínimo 6 caracteres."
+            password.isBlank()  -> res.getString(R.string.val_pass_requerida)
+            password.length < 6 -> res.getString(R.string.val_pass_min)
             else                -> null
         }
         confirmError = when {
-            confirm.isBlank()   -> "Repite la contraseña."
-            confirm != password -> "Las contraseñas no coinciden."
+            confirm.isBlank()   -> res.getString(R.string.val_confirm_requerida)
+            confirm != password -> res.getString(R.string.val_pass_no_coincide)
             else                -> null
         }
         return listOf(nombreError, emailError, passError, confirmError).all { it == null }
@@ -60,12 +61,12 @@ fun PantallaRegistro(navController: NavHostController) {
     fun traducirErrorFirebase(t: Throwable): String {
         val code = (t as? FirebaseAuthException)?.errorCode ?: ""
         return when (code) {
-            "ERROR_EMAIL_ALREADY_IN_USE"   -> "Ese correo ya está registrado."
-            "ERROR_INVALID_EMAIL"          -> "El correo no es válido."
-            "ERROR_OPERATION_NOT_ALLOWED"  -> "El registro está deshabilitado."
-            "ERROR_WEAK_PASSWORD"          -> "La contraseña es muy débil."
-            "ERROR_NETWORK_REQUEST_FAILED" -> "Sin conexión. Revisa tu internet."
-            else -> t.message ?: "Ocurrió un error. Intenta nuevamente."
+            "ERROR_EMAIL_ALREADY_IN_USE"   -> res.getString(R.string.reg_error_email_en_uso)
+            "ERROR_INVALID_EMAIL"          -> res.getString(R.string.auth_error_correo_invalido)
+            "ERROR_OPERATION_NOT_ALLOWED"  -> res.getString(R.string.reg_error_operacion_no_permitida)
+            "ERROR_WEAK_PASSWORD"          -> res.getString(R.string.reg_error_contrasena_debil)
+            "ERROR_NETWORK_REQUEST_FAILED" -> res.getString(R.string.auth_error_red)
+            else -> t.message ?: res.getString(R.string.auth_error_generico)
         }
     }
 
@@ -89,17 +90,15 @@ fun PantallaRegistro(navController: NavHostController) {
                     val user = result.user
                     if (user == null) {
                         loading = false
-                        actionError = "No se pudo crear la cuenta."
+                        actionError = res.getString(R.string.reg_error_usuario_nulo)
                         return@addOnSuccessListener
                     }
 
-                    // Display name
                     val profile = UserProfileChangeRequest.Builder()
                         .setDisplayName(nombre.trim())
                         .build()
                     user.updateProfile(profile)
 
-                    // Documento en Firestore
                     val data = mapOf(
                         "name"      to nombre.trim(),
                         "email"     to email.trim(),
@@ -119,8 +118,10 @@ fun PantallaRegistro(navController: NavHostController) {
                         }
                         .addOnFailureListener { e ->
                             loading = false
-                            actionError = "Cuenta creada, pero no se pudo guardar tu perfil: ${e.message}"
-                            // Puedes navegar igual si lo deseas:
+                            actionError = res.getString(
+                                R.string.reg_cuenta_creada_pero_perfil_error,
+                                e.message ?: "—"
+                            )
                             navController.navigate("principal") {
                                 popUpTo("registro") { inclusive = true }
                             }
@@ -137,7 +138,6 @@ fun PantallaRegistro(navController: NavHostController) {
                 popUpTo("registro") { inclusive = true }
             }
         },
-        // Errores para mostrar en la UI
         nombreError = nombreError,
         emailError = emailError,
         passwordError = passError,
