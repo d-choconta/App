@@ -135,13 +135,12 @@ private fun EstiloRowCard(
     }
 }
 
-/* ===== BOTTOM BAR (estilo “grande” con borde) ===== */
 @Composable
 private fun BottomActions(onHome: () -> Unit, onProfile: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -161,7 +160,6 @@ private fun BottomActions(onHome: () -> Unit, onProfile: () -> Unit) {
             )
         }
 
-        // “pastilla” central decorativa (como en tu referencia)
         Box(
             Modifier
                 .weight(1f)

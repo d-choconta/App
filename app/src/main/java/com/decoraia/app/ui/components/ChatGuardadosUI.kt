@@ -70,7 +70,7 @@ private fun BottomBar(onHome: () -> Unit, onProfile: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -231,7 +231,6 @@ fun ChatGuardadosUI(
         }
     }
 
-    // Diálogo de confirmación
     if (sessionToDelete != null) {
         AlertDialog(
             onDismissRequest = onDismissDelete,

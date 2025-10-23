@@ -256,7 +256,7 @@ fun RegistroScreenUI(
                     Text(actionError, color = ErrorRed, fontSize = 13.sp)
                 }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(0.dp))
 
                 Button(
                     onClick = onRegisterClick,

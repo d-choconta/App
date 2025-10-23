@@ -40,7 +40,6 @@ private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa = Color(0xFFB2754E)
 
-/* ===== Header Terracotta (mismo estilo que Estilos) ===== */
 @Composable
 private fun HeaderObjetos(
     @DrawableRes banner: Int,
@@ -57,7 +56,7 @@ private fun HeaderObjetos(
         // Banner con título
         Box(
             modifier = Modifier
-                .padding(horizontal = 18.dp, vertical = 30.dp) // igual que en Estilos
+                .padding(horizontal = 18.dp, vertical = 30.dp)
                 .fillMaxWidth()
                 .height(135.dp)
                 .clip(RoundedCornerShape(16.dp))
@@ -82,7 +81,6 @@ private fun HeaderObjetos(
             )
         }
 
-        // Botón Back superpuesto (Cocoa + borde Terracotta)
         IconButton(
             onClick = onBack,
             modifier = Modifier
@@ -143,13 +141,12 @@ private fun CategoriaCard(
     }
 }
 
-/* ===== Bottom bar (estilo “grande” con borde) ===== */
 @Composable
 private fun BottomActionsObjetos(onHome: () -> Unit, onProfile: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
