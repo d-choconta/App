@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -53,6 +54,7 @@ fun ChatHeader(
             .background(Cream)
             .statusBarsPadding()
     ) {
+        // Título centrado
         Text(
             text = title,
             color = Cocoa,
@@ -71,25 +73,24 @@ fun ChatHeader(
                 .border(2.dp, Terracotta, CircleShape)
                 .align(Alignment.CenterStart)
         ) {
-            Icon(
-                imageVector = Icons.Filled.ArrowBack,
-                contentDescription = "Atrás",
-                tint = Color.White
-            )
+            Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
         }
 
-        // ACCIÓN: HISTORIAL
-        TextButton(
+
+        IconButton(
             onClick = onHistory,
             modifier = Modifier
+                .padding(end = 17.dp)
+                .size(60.dp)
+                .clip(CircleShape)
+                .background(Cocoa.copy(alpha = 0.9f))
+                .border(2.dp, Terracotta, CircleShape)
                 .align(Alignment.CenterEnd)
-                .padding(end = 0.dp)
         ) {
-            Text(
-                "Historial",
-                color = Terracotta,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp
+            Icon(
+                imageVector = Icons.Filled.History,
+                contentDescription = "Historial",
+                tint = Color.White
             )
         }
     }
@@ -303,7 +304,7 @@ fun ChatIAScreenUI(
         Column(Modifier.fillMaxSize()) {
 
             ChatHeader(
-                title = "Chat con DecoraIA",
+                title = "Chat DecoraIA",
                 onBack = onBack,
                 onHistory = onHistory
             )
