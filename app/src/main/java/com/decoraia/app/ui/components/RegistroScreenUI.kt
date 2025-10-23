@@ -76,20 +76,18 @@ fun RegistroScreenUI(
     onBack: () -> Unit,
     onHaveAccountClick: () -> Unit,
     @DrawableRes heroImage: Int = R.drawable.registro,
-    // Errores inline
     nombreError: String? = null,
     emailError: String? = null,
     passwordError: String? = null,
     confirmError: String? = null,
-    actionError: String? = null, // error general (Firebase)
-    // Tweaks visuales opcionales
+    actionError: String? = null,
     titleYOffset: Dp = (-10).dp,
     heroHeight: Dp = 280.dp,
     heroWidthFraction: Float = 0.80f
 ) {
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
-            val headerHeight = 70.dp
+            val headerHeight = 66.dp
 
             Box(
                 Modifier
@@ -119,7 +117,7 @@ fun RegistroScreenUI(
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(top = 80.dp)
+                    .padding(top = 59.dp)
                     .padding(horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -148,7 +146,7 @@ fun RegistroScreenUI(
                     contentScale = ContentScale.Fit
                 )
 
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(0.dp))
 
                 val shape = RoundedCornerShape(22.dp)
 
@@ -175,7 +173,7 @@ fun RegistroScreenUI(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(0.dp))
 
                 // Correo
                 OutlinedTextField(
@@ -200,7 +198,7 @@ fun RegistroScreenUI(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(0.dp))
 
                 // Contraseña
                 OutlinedTextField(
@@ -226,7 +224,7 @@ fun RegistroScreenUI(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(0.dp))
 
                 // Confirmar contraseña
                 OutlinedTextField(
@@ -258,7 +256,7 @@ fun RegistroScreenUI(
                     Text(actionError, color = ErrorRed, fontSize = 13.sp)
                 }
 
-                Spacer(Modifier.height(15.dp))
+                Spacer(Modifier.height(10.dp))
 
                 Button(
                     onClick = onRegisterClick,
@@ -279,7 +277,7 @@ fun RegistroScreenUI(
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(0.dp))
 
                 TextButton(onClick = onHaveAccountClick) {
                     Text(

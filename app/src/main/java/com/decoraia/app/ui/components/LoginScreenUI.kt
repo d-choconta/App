@@ -118,7 +118,7 @@ fun LoginScreenUI(
             Column(
                 Modifier
                     .fillMaxSize()
-                    .padding(top = 100.dp)
+                    .padding(top = 90.dp)
                     .padding(horizontal = 30.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -155,7 +155,7 @@ fun LoginScreenUI(
                     )
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(16.dp))
 
                 // ---- Correo ----
                 OutlinedTextField(
@@ -205,7 +205,7 @@ fun LoginScreenUI(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(5.dp))
 
                 // ---- Contraseña ----
                 OutlinedTextField(
@@ -258,7 +258,7 @@ fun LoginScreenUI(
                         .focusRequester(passwordFocus)
                 )
 
-                Spacer(Modifier.height(3.dp))
+                Spacer(Modifier.height(0.dp))
 
                 TextButton(onClick = onForgotClick, modifier = Modifier.align(Alignment.Start), enabled = !loading) {
                     Text(
@@ -269,7 +269,7 @@ fun LoginScreenUI(
                         fontSize = 17.sp
                     )
                 }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
 
                 Button(
                     onClick = onLoginClick,

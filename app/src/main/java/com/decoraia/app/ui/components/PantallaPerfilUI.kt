@@ -290,14 +290,7 @@ fun PantallaPerfilUI(
                 }
 
 
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(56.dp)
-                        .padding(horizontal = 12.dp)
-                        .clip(RoundedCornerShape(28.dp))
-                        .background(Color.White.copy(alpha = 0.45f))
-                )
+
 
 
                 Spacer(Modifier.width(72.dp))
