@@ -3,25 +3,17 @@
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.navigation.NavController
-import coil.compose.rememberAsyncImagePainter
 import com.decoraia.app.BuildConfig
 import com.decoraia.app.ui.components.ChatIAScreenUI
 import com.decoraia.app.ui.components.ChatMessageUI
@@ -36,10 +28,10 @@ import java.io.File
 data class MensajeIA(
     val id: Long = System.nanoTime(),
     val texto: String,
-    val esUsuario: Boolean
+    val esUsuario: Boolean,
+    val imageUri: Uri? = null
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaChatIA(
     navController: NavController? = null,
@@ -47,21 +39,20 @@ fun PantallaChatIA(
 ) {
     val db = FirebaseFirestore.getInstance()
     val auth = FirebaseAuth.getInstance()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val listaMensajes = remember { mutableStateListOf<MensajeIA>() }
     var prompt by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
-
-    val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val focus = LocalFocusManager.current
-    val keyboard = LocalSoftwareKeyboardController.current
-    val context = LocalContext.current
-
-    // ---- Adjuntos (imagen) ----
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
+    val context = LocalContext.current
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+
+    // === Cámara y galería ===
     val pickFromGallery = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri -> if (uri != null) selectedImage = uri }
@@ -81,15 +72,14 @@ fun PantallaChatIA(
         }
     }
 
-    // Estado de la sesión en Firestore
+
     var sessionId by remember { mutableStateOf<String?>(null) }
     var pusoTitulo by remember { mutableStateOf(false) }
 
-    // 1) SOLO abrir una sesión existente (no crear si es null)
     LaunchedEffect(chatId) {
         val uid = auth.currentUser?.uid
         if (uid == null) {
-            scope.launch { snackbarHostState.showSnackbar("Debes iniciar sesión para chatear") }
+            snackbarHostState.showSnackbar("Debes iniciar sesión para chatear")
             return@LaunchedEffect
         }
 
@@ -111,26 +101,23 @@ fun PantallaChatIA(
                     }
                 }
                 .addOnFailureListener { e ->
-                    scope.launch { snackbarHostState.showSnackbar("Error cargando mensajes: ${e.message}") }
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Error cargando mensajes: ${e.message}")
+                    }
                 }
         }
     }
 
-    val uiMessages: List<ChatMessageUI> =
-        listaMensajes.mapIndexed { idx, m ->
-            ChatMessageUI(
-                id = "m$idx",
-                text = m.texto,
-                imageUrl = null,
-                isUser = m.esUsuario
-            )
-        }
+    val uiMessages = listaMensajes.mapIndexed { idx, m ->
+        ChatMessageUI(
+            id = "m$idx",
+            text = m.texto,
+            imageUrl = m.imageUri?.toString(),
+            isUser = m.esUsuario
+        )
+    }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color.Transparent,
-        contentColor = Color.Unspecified
-    ) { padding ->
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             ChatIAScreenUI(
                 messages = uiMessages,
@@ -138,12 +125,11 @@ fun PantallaChatIA(
                 onInputChange = { prompt = it },
                 loading = loading,
                 selectedImage = selectedImage,
-
                 onAttachGallery = { pickFromGallery.launch("image/*") },
-                onAttachCamera  = { requestCameraPermission.launch(android.Manifest.permission.CAMERA) },
+                onAttachCamera = {
+                    requestCameraPermission.launch(android.Manifest.permission.CAMERA)
+                },
                 onRemoveAttachment = { selectedImage = null },
-
-                // Enviar: crea sesión si no existe y luego envía
                 onSend = {
                     scope.launch {
                         val uid = auth.currentUser?.uid
@@ -169,7 +155,7 @@ fun PantallaChatIA(
                             newId
                         }
 
-                        enviarMensajeConAdjunto(
+                        enviarMensajeConGemini(
                             context = context,
                             db = db,
                             sessionId = sid,
@@ -178,12 +164,14 @@ fun PantallaChatIA(
                             listaMensajes = listaMensajes,
                             focus = focus,
                             onStart = { loading = true; prompt = "" },
-                            onDone  = { loading = false; selectedImage = null },
-                            onError = { msg -> scope.launch { snackbarHostState.showSnackbar(msg) } },
-                            setTitleIfNeeded = { firstUserText ->
-                                if (!pusoTitulo && firstUserText.isNotBlank()) {
+                            onDone = { loading = false; selectedImage = null },
+                            onError = { msg ->
+                                scope.launch { snackbarHostState.showSnackbar(msg) }
+                            },
+                            setTitleIfNeeded = { firstText ->
+                                if (!pusoTitulo && firstText.isNotBlank()) {
                                     db.collection("sessions").document(sid)
-                                        .update("title", firstUserText.take(40))
+                                        .update("title", firstText.take(40))
                                     pusoTitulo = true
                                 }
                             }
@@ -191,7 +179,6 @@ fun PantallaChatIA(
                         keyboard?.hide()
                     }
                 },
-
                 onBack = { navController?.popBackStack() },
                 onHistory = { navController?.navigate("chatguardados") },
                 onHome = {
@@ -205,15 +192,15 @@ fun PantallaChatIA(
     }
 }
 
-/** Envía texto y opcionalmente imagen, guarda en Firestore y llama a Gemini. */
-private fun enviarMensajeConAdjunto(
+/** Envía texto e imagen y guarda en Firestore */
+private fun enviarMensajeConGemini(
     context: android.content.Context,
     db: FirebaseFirestore,
     sessionId: String,
     prompt: String,
     imageUri: Uri?,
     listaMensajes: MutableList<MensajeIA>,
-    focus: FocusManager,
+    focus: androidx.compose.ui.focus.FocusManager,
     onStart: () -> Unit,
     onDone: () -> Unit,
     onError: (String) -> Unit,
@@ -227,22 +214,16 @@ private fun enviarMensajeConAdjunto(
 
     val sessionRef = db.collection("sessions").document(sessionId)
 
-    // 1) Mensaje del usuario
+    // Usuario
     if (texto.isNotBlank()) {
         listaMensajes.add(MensajeIA(texto = texto, esUsuario = true))
         sessionRef.collection("messages").add(
-            mapOf(
-                "role" to "user",
-                "text" to texto,
-                "createdAt" to Timestamp.now()
-            )
+            mapOf("role" to "user", "text" to texto, "createdAt" to Timestamp.now())
         )
         setTitleIfNeeded(texto)
-    } else {
-        setTitleIfNeeded("Imagen")
-    }
+    } else setTitleIfNeeded("Imagen")
 
-    // 2) Adjuntos
+    // Imagen
     if (imageUri != null) {
         sessionRef.collection("messages").add(
             mapOf(
@@ -256,41 +237,33 @@ private fun enviarMensajeConAdjunto(
 
     sessionRef.update("lastMessageAt", Timestamp.now())
 
-    // 3) Gemini
-    val handleAssistant: (String) -> Unit = { respuesta ->
-        listaMensajes.add(MensajeIA(texto = respuesta, esUsuario = false))
-        onDone()
-
-        sessionRef.collection("messages").add(
-            mapOf(
-                "role" to "assistant",
-                "text" to respuesta,
-                "createdAt" to Timestamp.now()
+    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+        try {
+            val (respuestaTexto, _) = GeminiService.askGeminiSuspend(
+                if (texto.isBlank()) "Analiza esta imagen" else texto,
+                imageUri,
+                context
             )
-        )
-        sessionRef.update("lastMessageAt", Timestamp.now())
 
-        if (respuesta.startsWith("Error:")) {
-            onError(respuesta.removePrefix("Error: ").trim())
-        }
-    }
+            listaMensajes.add(MensajeIA(texto = respuestaTexto, esUsuario = false))
+            onDone()
 
-    try {
-        if (imageUri != null) {
-            // implementa askGeminiWithImage
-            GeminiService.askGemini(
-                if (texto.isBlank()) "Analiza esta imagen" else texto
-            ) { handleAssistant(it) }
-        } else {
-            GeminiService.askGemini(texto) { handleAssistant(it) }
+            sessionRef.collection("messages").add(
+                mapOf(
+                    "role" to "assistant",
+                    "text" to respuestaTexto,
+                    "createdAt" to Timestamp.now()
+                )
+            )
+            sessionRef.update("lastMessageAt", Timestamp.now())
+        } catch (e: Exception) {
+            onDone()
+            onError(e.message ?: "Error desconocido")
         }
-    } catch (e: Exception) {
-        onDone()
-        onError(e.message ?: "Error desconocido")
     }
 }
 
-/** Crea un Uri temporal para la foto de cámara */
+/** Crea URI temporal para fotos */
 private fun createTempImageUri(context: android.content.Context): Uri {
     val imagesDir = File(context.cacheDir, "images").apply { mkdirs() }
     val file = File.createTempFile("camera_", ".jpg", imagesDir)
