@@ -194,7 +194,7 @@ fun PantallaChatIA(
     }
 }
 
-/** Envía texto e imagen y guarda en Firestore */
+//** Envía texto e imagen y guarda en Firestore */
 private fun enviarMensajeConGemini(
     context: android.content.Context,
     db: FirebaseFirestore,
@@ -216,29 +216,29 @@ private fun enviarMensajeConGemini(
 
     val sessionRef = db.collection("sessions").document(sessionId)
 
-    // Usuario
-    if (texto.isNotBlank()) {
-        listaMensajes.add(MensajeIA(texto = texto, esUsuario = true))
-        sessionRef.collection("messages").add(
-            mapOf("role" to "user", "text" to texto, "createdAt" to Timestamp.now())
-        )
-        setTitleIfNeeded(texto)
-    } else setTitleIfNeeded("Imagen")
+    // Agregar el mensaje del usuario con texto e imagen
+    val mensajeUsuario = MensajeIA(
+        texto = texto.ifBlank { "(imagen adjunta)" },
+        esUsuario = true,
+        imageUri = imageUri
+    )
+    listaMensajes.add(mensajeUsuario)
 
-    // Imagen
-    if (imageUri != null) {
-        sessionRef.collection("messages").add(
-            mapOf(
-                "role" to "user",
-                "imageUri" to imageUri.toString(),
-                "text" to texto,
-                "createdAt" to Timestamp.now()
-            )
-        )
-    }
+    // Guardar mensaje en Firestore
+    val mensajeMap = mutableMapOf<String, Any>(
+        "role" to "user",
+        "createdAt" to Timestamp.now()
+    )
+    if (texto.isNotBlank()) mensajeMap["text"] = texto
+    if (imageUri != null) mensajeMap["imageUri"] = imageUri.toString()
 
+    sessionRef.collection("messages").add(mensajeMap)
     sessionRef.update("lastMessageAt", Timestamp.now())
 
+    // Establecer título si es la primera vez
+    setTitleIfNeeded(texto.ifBlank { "Imagen" })
+
+    // Procesar con Gemini
     kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
         try {
             val (respuestaTexto, _) = GeminiService.askGeminiSuspend(
@@ -264,6 +264,7 @@ private fun enviarMensajeConGemini(
         }
     }
 }
+
 
 /** Crea URI temporal para fotos */
 private fun createTempImageUri(context: android.content.Context): Uri {

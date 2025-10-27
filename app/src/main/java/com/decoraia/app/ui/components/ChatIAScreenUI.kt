@@ -33,6 +33,7 @@ private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa = Color(0xFFB2754E)
 
+/* Modelo del mensaje */
 data class ChatMessageUI(
     val id: String,
     val text: String? = null,
@@ -94,6 +95,7 @@ fun ChatHeader(
     }
 }
 
+/* Burbuja del chat */
 @Composable
 private fun ChatBubble(message: ChatMessageUI) {
     val isUser = message.isUser
@@ -138,6 +140,7 @@ private fun ChatBubble(message: ChatMessageUI) {
     }
 }
 
+/* Barra de entrada */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChatInputBar(
@@ -240,6 +243,7 @@ private fun ChatInputBar(
     }
 }
 
+/* Barra inferior */
 @Composable
 private fun ChatBottomBar(
     onHome: () -> Unit,
@@ -281,6 +285,7 @@ private fun ChatBottomBar(
     }
 }
 
+/* Pantalla principal */
 @Composable
 fun ChatIAScreenUI(
     messages: List<ChatMessageUI>,
