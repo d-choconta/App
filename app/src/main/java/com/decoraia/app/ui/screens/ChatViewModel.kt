@@ -7,7 +7,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
@@ -19,44 +21,69 @@ data class ChatMessage(
 )
 
 class ChatViewModel : ViewModel() {
+
     val messages = mutableStateListOf<ChatMessage>()
-    var isSending = mutableStateOf(false)
+    val isSending = mutableStateOf(false)
 
     fun send(userText: String, context: Context) {
+        if (userText.isBlank()) return
+
         messages += ChatMessage(texto = userText, esUsuario = true)
         isSending.value = true
 
-        viewModelScope.launch {
-            val (replyText, replyImage) = GeminiService.askGeminiSuspend(userText, null, context)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val (replyText, replyImage) = GeminiService.askGeminiSuspend(userText, null, context)
+                val imageUri = replyImage?.let { bitmapToUri(context, it) }
 
-            val imageUri = replyImage?.let { bitmapToUri(context, it) }
-
-            messages += ChatMessage(
-                texto = replyText,
-                esUsuario = false,
-                imageUri = imageUri
-            )
-
-            isSending.value = false
+                withContext(Dispatchers.Main) {
+                    messages += ChatMessage(
+                        texto = replyText,
+                        esUsuario = false,
+                        imageUri = imageUri
+                    )
+                    isSending.value = false
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    messages += ChatMessage(
+                        texto = "Error al procesar: ${e.message ?: "desconocido"}",
+                        esUsuario = false
+                    )
+                    isSending.value = false
+                }
+            }
         }
     }
 
     fun sendWithImage(userText: String, imageUri: Uri?, context: Context) {
+        if (userText.isBlank() && imageUri == null) return
+
         messages += ChatMessage(texto = userText, esUsuario = true, imageUri = imageUri)
         isSending.value = true
 
-        viewModelScope.launch {
-            val (replyText, replyImage) = GeminiService.askGeminiSuspend(userText, imageUri, context)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val (replyText, replyImage) = GeminiService.askGeminiSuspend(userText, imageUri, context)
+                val replyUri = replyImage?.let { bitmapToUri(context, it) }
 
-            val replyUri = replyImage?.let { bitmapToUri(context, it) }
-
-            messages += ChatMessage(
-                texto = replyText,
-                esUsuario = false,
-                imageUri = replyUri
-            )
-
-            isSending.value = false
+                withContext(Dispatchers.Main) {
+                    messages += ChatMessage(
+                        texto = replyText,
+                        esUsuario = false,
+                        imageUri = replyUri
+                    )
+                    isSending.value = false
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    messages += ChatMessage(
+                        texto = "Error al procesar: ${e.message ?: "desconocido"}",
+                        esUsuario = false
+                    )
+                    isSending.value = false
+                }
+            }
         }
     }
 

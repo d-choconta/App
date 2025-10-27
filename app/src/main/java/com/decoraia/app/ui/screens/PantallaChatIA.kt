@@ -218,7 +218,7 @@ private fun enviarMensajeConGemini(
 
     // Agregar el mensaje del usuario con texto e imagen
     val mensajeUsuario = MensajeIA(
-        texto = texto.ifBlank { "(imagen adjunta)" },
+        texto = texto.ifBlank { "()" },
         esUsuario = true,
         imageUri = imageUri
     )
