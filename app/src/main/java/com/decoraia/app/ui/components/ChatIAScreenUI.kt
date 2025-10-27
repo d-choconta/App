@@ -10,14 +10,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 
-/* Paleta*/
+/* Paleta */
 private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa = Color(0xFFB2754E)
@@ -36,11 +36,11 @@ private val Cocoa = Color(0xFFB2754E)
 data class ChatMessageUI(
     val id: String,
     val text: String? = null,
-    val imageUrl: String? = null,
+    val imageUri: Uri? = null,
     val isUser: Boolean
 )
 
-/*Header*/
+/* Header */
 @Composable
 fun ChatHeader(
     title: String,
@@ -54,7 +54,6 @@ fun ChatHeader(
             .background(Cream)
             .statusBarsPadding()
     ) {
-        // Título centrado
         Text(
             text = title,
             color = Cocoa,
@@ -73,9 +72,8 @@ fun ChatHeader(
                 .border(2.dp, Terracotta, CircleShape)
                 .align(Alignment.CenterStart)
         ) {
-            Icon(Icons.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
         }
-
 
         IconButton(
             onClick = onHistory,
@@ -117,9 +115,9 @@ private fun ChatBubble(message: ChatMessageUI) {
                 .background(bg)
                 .padding(10.dp)
         ) {
-            message.imageUrl?.let { url ->
+            message.imageUri?.let { uri ->
                 Image(
-                    painter = rememberAsyncImagePainter(url),
+                    painter = rememberAsyncImagePainter(uri),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -153,7 +151,6 @@ private fun ChatInputBar(
     onSend: () -> Unit
 ) {
     Column(Modifier.fillMaxWidth()) {
-
         if (selectedImage != null) {
             Row(
                 Modifier
@@ -181,7 +178,8 @@ private fun ChatInputBar(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            var menuOpen = androidx.compose.runtime.remember { false }
+            var menuOpen by remember { mutableStateOf(false) }
+
             Box {
                 IconButton(
                     onClick = { menuOpen = true },
@@ -235,13 +233,12 @@ private fun ChatInputBar(
                 if (loading) {
                     CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp), color = Color.White)
                 } else {
-                    Icon(Icons.Filled.Send, contentDescription = "Enviar", tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Enviar", tint = Color.White)
                 }
             }
         }
     }
 }
-
 
 @Composable
 private fun ChatBottomBar(
@@ -302,7 +299,6 @@ fun ChatIAScreenUI(
 ) {
     Surface(color = Cream) {
         Column(Modifier.fillMaxSize()) {
-
             ChatHeader(
                 title = "Chat DecoraIA",
                 onBack = onBack,
@@ -344,6 +340,6 @@ fun ChatIAScreenUI(
             )
 
             ChatBottomBar(onHome = onHome, onProfile = onProfile)
-            }
         }
+    }
 }

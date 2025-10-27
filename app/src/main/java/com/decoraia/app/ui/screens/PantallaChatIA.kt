@@ -4,8 +4,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -72,10 +70,10 @@ fun PantallaChatIA(
         }
     }
 
-
     var sessionId by remember { mutableStateOf<String?>(null) }
     var pusoTitulo by remember { mutableStateOf(false) }
 
+    // === Carga del historial de chat ===
     LaunchedEffect(chatId) {
         val uid = auth.currentUser?.uid
         if (uid == null) {
@@ -94,9 +92,11 @@ fun PantallaChatIA(
                     qs.forEach { d ->
                         val role = d.getString("role").orEmpty()
                         val text = d.getString("text").orEmpty()
+                        val imageUrl = d.getString("imageUri")
                         listaMensajes += MensajeIA(
                             texto = text,
-                            esUsuario = (role == "user")
+                            esUsuario = (role == "user"),
+                            imageUri = imageUrl?.let { Uri.parse(it) }
                         )
                     }
                 }
@@ -108,15 +108,17 @@ fun PantallaChatIA(
         }
     }
 
+    // === Conversión para UI ===
     val uiMessages = listaMensajes.mapIndexed { idx, m ->
         ChatMessageUI(
             id = "m$idx",
             text = m.texto,
-            imageUrl = m.imageUri?.toString(),
+            imageUri = m.imageUri,
             isUser = m.esUsuario
         )
     }
 
+    // === Interfaz ===
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             ChatIAScreenUI(

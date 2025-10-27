@@ -1,17 +1,20 @@
 package com.decoraia.app.ui.screens
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
 data class ChatMessage(
     val id: Long = System.nanoTime(),
-    val text: String,
-    val fromUser: Boolean,
+    val texto: String,
+    val esUsuario: Boolean,
     val imageUri: Uri? = null
 )
 
@@ -19,50 +22,54 @@ class ChatViewModel : ViewModel() {
     val messages = mutableStateListOf<ChatMessage>()
     var isSending = mutableStateOf(false)
 
-    /**
-     * Envía un mensaje de texto (sin imagen)
-     */
     fun send(userText: String, context: Context) {
-        messages += ChatMessage(text = userText, fromUser = true)
+        messages += ChatMessage(texto = userText, esUsuario = true)
         isSending.value = true
 
         viewModelScope.launch {
             val (replyText, replyImage) = GeminiService.askGeminiSuspend(userText, null, context)
 
-            // Se agrega la respuesta del modelo como mensaje
+            val imageUri = replyImage?.let { bitmapToUri(context, it) }
+
             messages += ChatMessage(
-                text = replyText,
-                fromUser = false
+                texto = replyText,
+                esUsuario = false,
+                imageUri = imageUri
             )
 
             isSending.value = false
         }
     }
 
-    /**
-     * Envía un mensaje con una imagen adjunta
-     */
     fun sendWithImage(userText: String, imageUri: Uri?, context: Context) {
-        messages += ChatMessage(text = userText, fromUser = true, imageUri = imageUri)
+        messages += ChatMessage(texto = userText, esUsuario = true, imageUri = imageUri)
         isSending.value = true
 
         viewModelScope.launch {
             val (replyText, replyImage) = GeminiService.askGeminiSuspend(userText, imageUri, context)
 
+            val replyUri = replyImage?.let { bitmapToUri(context, it) }
+
             messages += ChatMessage(
-                text = replyText,
-                fromUser = false
+                texto = replyText,
+                esUsuario = false,
+                imageUri = replyUri
             )
 
             isSending.value = false
         }
     }
 
-    /**
-     * Reinicia la conversación
-     */
+    private fun bitmapToUri(context: Context, bitmap: Bitmap): Uri {
+        val file = File(context.cacheDir, "reply_${System.currentTimeMillis()}.png")
+        FileOutputStream(file).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        return Uri.fromFile(file)
+    }
+
     fun reset() {
         messages.clear()
-        messages += ChatMessage(text = "Conversación reiniciada 😊", fromUser =false)
-        }
+        messages += ChatMessage(texto = "Conversación reiniciada 😊", esUsuario = false)
+    }
 }
