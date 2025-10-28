@@ -1,22 +1,27 @@
 ﻿package com.decoraia.app.ui.screens
 
+import android.net.Uri
 import androidx.compose.runtime.*
 import androidx.navigation.NavHostController
 import com.decoraia.app.data.ProductoAR
 import com.decoraia.app.data.RAProductsRepo
+import com.decoraia.app.data.repo.FavoritosRepository
+import com.decoraia.app.data.repo.ProductRepository
+import com.decoraia.app.data.repo.ProductRepositoryImpl
 import com.decoraia.app.ui.components.RAModelosScreenUI
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 @Composable
 fun PantallaRAModelos(
     nav: NavHostController,
     style: String,
-    categoryId: String
+    categoryId: String,
+    productRepo: ProductRepository = ProductRepositoryImpl(),
+    favRepo: FavoritosRepository = FavoritosRepository()
 ) {
+    // Categoría fija
     val categoria = remember(categoryId) {
         RAProductsRepo.categoriasFijas.firstOrNull { it.id == categoryId }
             ?: RAProductsRepo.categoriasFijas.first()
@@ -25,70 +30,54 @@ fun PantallaRAModelos(
     var loading by remember { mutableStateOf(true) }
     var modelos by remember { mutableStateOf(emptyList<ProductoAR>()) }
     var errorMsg by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
 
-    val auth = remember { FirebaseAuth.getInstance() }
-    val db   = remember { FirebaseFirestore.getInstance() }
-    val uid  = auth.currentUser?.uid
+    val scope = rememberCoroutineScope()
+    val uid = remember { FirebaseAuth.getInstance().currentUser?.uid }
+
+    // Favoritos (ids)
     var favoriteIds by remember { mutableStateOf(setOf<String>()) }
 
+    // 1) Cargar productos desde el repositorio (independiente de Firebase)
     LaunchedEffect(style, categoryId) {
+        loading = true
+        errorMsg = null
+        try {
+            modelos = productRepo.loadBy(style = style, typeValue = categoria.typeValue)
+        } catch (e: Exception) {
+            errorMsg = e.message
+            modelos = emptyList()
+        } finally {
+            loading = false
+        }
+    }
+
+    // 2) Escuchar cambios de favoritos en tiempo real desde el repositorio
+    LaunchedEffect(uid) {
+        if (uid == null) {
+            errorMsg = "Debes iniciar sesión para gestionar favoritos."
+            return@LaunchedEffect
+        }
+        favRepo.listenFavoritosIds(uid).collectLatest { ids ->
+            favoriteIds = ids
+        }
+    }
+
+    // 3) Toggle favorito usando el repositorio de favoritos
+    fun toggleFavorite(item: ProductoAR) {
+        val currentUid = uid ?: return
         scope.launch {
             try {
-                loading = true
-                errorMsg = null
-                modelos = RAProductsRepo.loadProductos(
-                    style = style,
-                    typeValue = categoria.typeValue
-                )
-            } catch (e: Exception) {
-                errorMsg = e.message
-                modelos = emptyList()
-            } finally {
-                loading = false
+                if (favoriteIds.contains(item.id)) {
+                    favRepo.removeFavorito(currentUid, item.id)
+                } else {
+                    favRepo.addFavorito(currentUid, item)
+                }
+            } catch (_: Exception) {
             }
         }
     }
 
-    DisposableEffect(uid) {
-        var registration: ListenerRegistration? = null
-        if (uid != null) {
-            registration = db.collection("users")
-                .document(uid)
-                .collection("favorites")
-                .addSnapshotListener { snap, _ ->
-                    val ids = mutableSetOf<String>()
-                    snap?.documents?.forEach { d ->
-                        d.getString("productId")?.let { ids.add(it) }
-                    }
-                    favoriteIds = ids
-                }
-        }
-        onDispose { registration?.remove() }
-    }
-
-    fun toggleFavorite(prod: ProductoAR) {
-        if (uid == null) return
-        val favsCol = db.collection("users").document(uid).collection("favorites")
-        val isFav = favoriteIds.contains(prod.id)
-
-        scope.launch {
-            try {
-                if (isFav) {
-                    val q = favsCol.whereEqualTo("productId", prod.id).get().await()
-                    q.documents.forEach { it.reference.delete().await() }
-                } else {
-                    val data = mapOf(
-                        "productId" to prod.id,
-                        "type" to prod.type,
-                        "addedAt" to com.google.firebase.Timestamp.now()
-                    )
-                    favsCol.add(data).await()
-                }
-            } catch (_: Exception) { }
-        }
-    }
-
+    // 4) UI (sin estilos, tu UI component ya los aplica)
     RAModelosScreenUI(
         categoriaTitulo = categoria.label,
         modelos = modelos,
@@ -97,10 +86,15 @@ fun PantallaRAModelos(
         errorMsg = errorMsg,
         onBack = { nav.popBackStack() },
         onSelectModelo = { modelo ->
-            nav.navigate("arviewer?modelUrl=${modelo.modelUrl}")
+            val encoded = Uri.encode(modelo.modelUrl)
+            nav.navigate("arviewer?modelUrl=$encoded")
         },
         onToggleFavorite = { producto -> toggleFavorite(producto) },
-        onHome = { nav.navigate("principal") { popUpTo("principal") { inclusive = true } } },
+        onHome = {
+            nav.navigate("principal") {
+                popUpTo("principal") { inclusive = true }
+            }
+        },
         onProfile = { nav.navigate("perfil") }
     )
 }
