@@ -19,9 +19,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -29,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 
 private val Cream          = Color(0xFFFBF3E3)
 private val Terracotta     = Color(0xFFE1A172)
@@ -61,6 +66,7 @@ private fun TopWavesRegistro(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegistroScreenUI(
     nombre: String,
@@ -85,6 +91,8 @@ fun RegistroScreenUI(
     heroHeight: Dp = 280.dp,
     heroWidthFraction: Float = 0.80f
 ) {
+    val focus = LocalFocusManager.current
+
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
             val headerHeight = 66.dp
@@ -150,7 +158,7 @@ fun RegistroScreenUI(
 
                 val shape = RoundedCornerShape(22.dp)
 
-                // Nombre
+                // Nombre — Next
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = onNombreChange,
@@ -170,12 +178,17 @@ fun RegistroScreenUI(
                         unfocusedBorderColor = if (nombreError != null) ErrorRed else Terracotta,
                         errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
+                    // 👇 IME "Siguiente"
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focus.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(Modifier.height(0.dp))
 
-                // Correo
+                // Correo — teclado con @ y Next
                 OutlinedTextField(
                     value = email,
                     onValueChange = onEmailChange,
@@ -195,12 +208,20 @@ fun RegistroScreenUI(
                         unfocusedBorderColor = if (emailError != null) ErrorRed else Terracotta,
                         errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
+                    // 👇 Teclado de email y Next
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focus.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(Modifier.height(0.dp))
 
-                // Contraseña
+                // Contraseña — Next
                 OutlinedTextField(
                     value = password,
                     onValueChange = onPasswordChange,
@@ -221,12 +242,17 @@ fun RegistroScreenUI(
                         unfocusedBorderColor = if (passwordError != null) ErrorRed else Terracotta,
                         errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
+                    // 👇 Next
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focus.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(Modifier.height(0.dp))
 
-                // Confirmar contraseña
+                // Confirmar contraseña — Done (enviar)
                 OutlinedTextField(
                     value = confirm,
                     onValueChange = onConfirmChange,
@@ -247,10 +273,17 @@ fun RegistroScreenUI(
                         unfocusedBorderColor = if (confirmError != null) ErrorRed else Terracotta,
                         errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
+                    // 👇 Done: dispara el registro y cierra el teclado
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focus.clearFocus()
+                            onRegisterClick()
+                        }
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Error general (Firebase) bajo los campos
                 if (!actionError.isNullOrBlank()) {
                     Spacer(Modifier.height(8.dp))
                     Text(actionError, color = ErrorRed, fontSize = 13.sp)

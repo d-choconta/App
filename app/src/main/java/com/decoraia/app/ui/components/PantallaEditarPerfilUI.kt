@@ -1,6 +1,5 @@
 package com.decoraia.app.ui.components
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,6 +25,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
 
@@ -37,7 +37,6 @@ private val TerracottaDark  = Color(0xFFCF8A57)
 private val Cocoa      = Color(0xFFB2754E)
 private val Graphite   = Color(0xFF2D2A26)
 private val Mint       = Color(0xFF7DB686)
-/* Panel claro tipo mock */
 private val PanelPeach = Color(0xFFECC8AC)
 
 /* Ondas superiores */
@@ -50,50 +49,23 @@ private fun TopWaves(modifier: Modifier = Modifier) {
         val terracotta = Path().apply {
             moveTo(0f, 0f)
             lineTo(w * 0.6f, 0f)
-
-            cubicTo(
-                w * 0.3f, h * 0.2f,
-                w * 0.2f, h * 1f,
-                w * 0.19f, h * 1.7f
-            )
-
-            cubicTo(
-                w * 0.05f, h * 1.9f,
-                w * 0.009f, h * 2.1f,
-                0f, h * 2.4f
-            )
-
-            lineTo(0f, 0f)
-            close()
+            cubicTo(w * 0.3f, h * 0.2f, w * 0.2f, h * 1f, w * 0.19f, h * 1.7f)
+            cubicTo(w * 0.05f, h * 1.9f, w * 0.009f, h * 2.1f, 0f, h * 2.4f)
+            lineTo(0f, 0f); close()
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
         val cocoa = Path().apply {
-            moveTo(w, 0f)
-            lineTo(w * 0.4f, 0f)
-
-            cubicTo(
-                w * 0.7f, h * 0.2f,
-                w * 0.8f, h * 1f,
-                w * 0.81f, h * 1.7f
-            )
-
-            cubicTo(
-                w * 0.95f, h * 1.9f,
-                w * 0.991f, h * 2.1f,
-                w, h * 2.4f
-            )
-
-            lineTo(w, 0f)
-            close()
+            moveTo(w, 0f); lineTo(w * 0.4f, 0f)
+            cubicTo(w * 0.7f, h * 0.2f, w * 0.8f, h * 1f, w * 0.81f, h * 1.7f)
+            cubicTo(w * 0.95f, h * 1.9f, w * 0.991f, h * 2.1f, w, h * 2.4f)
+            lineTo(w, 0f); close()
         }
         drawPath(cocoa, Cocoa.copy(alpha = 0.30f), style = Fill)
-
-
     }
 }
 
-/* ============ UI ============ */
+/* UI */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaEditarPerfilUI(
@@ -104,7 +76,10 @@ fun PantallaEditarPerfilUI(
     loading: Boolean,
     onGuardar: () -> Unit,
     onBack: () -> Unit,
-    onHome: () -> Unit
+    onHome: () -> Unit,
+    // NUEVOS
+    photoUrl: String?,
+    onChangePhotoClick: () -> Unit
 ) {
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
@@ -117,7 +92,6 @@ fun PantallaEditarPerfilUI(
                     .align(Alignment.TopCenter)
             ) {
                 TopWaves(Modifier.fillMaxSize())
-
 
                 IconButton(
                     onClick = onBack,
@@ -150,7 +124,6 @@ fun PantallaEditarPerfilUI(
                 )
             }
 
-            /* Contenido */
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -159,33 +132,52 @@ fun PantallaEditarPerfilUI(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
+                // ===== Avatar + botón =====
                 Box(
                     modifier = Modifier
-                        .size(220.dp)
-                        .clip(CircleShape),
+                        .size(220.dp),   // OJO: sin clip aquí para no recortar el FAB
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.perfil),
-                        contentDescription = "Avatar",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-
-                    // Badge con “+”
+                    // Círculo con borde que SÍ recorta solo la foto
                     Box(
                         modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .offset(x = 8.dp, y = 8.dp)
-                            .size(36.dp)
+                            .matchParentSize()
                             .clip(CircleShape)
-                            .background(CreamDark),
-                        contentAlignment = Alignment.Center
+                            .border(3.dp, Cocoa, CircleShape)
+                    ) {
+                        if (!photoUrl.isNullOrBlank()) {
+                            AsyncImage(
+                                model = photoUrl,
+                                placeholder = painterResource(R.drawable.perfil),
+                                error = painterResource(R.drawable.perfil),
+                                contentDescription = "Avatar",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.matchParentSize()
+                            )
+                        } else {
+                            Image(
+                                painter = painterResource(id = R.drawable.perfil),
+                                contentDescription = "Avatar",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.matchParentSize()
+                            )
+                        }
+                    }
+
+                    // FAB (+) visible y con borde
+                    SmallFloatingActionButton(
+                        onClick = onChangePhotoClick,
+                        containerColor = Terracotta,
+                        contentColor = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .offset(x = (-8).dp, y = (-8).dp) // un poco hacia adentro
+                            .size(48.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Add,
                             contentDescription = "Cambiar foto",
-                            tint = Terracotta
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                 }
@@ -284,9 +276,6 @@ fun PantallaEditarPerfilUI(
                         modifier = Modifier.size(36.dp)
                     )
                 }
-
-
-
 
                 Spacer(Modifier.width(72.dp))
             }

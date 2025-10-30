@@ -21,17 +21,16 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
 import com.decoraia.app.ui.theme.MuseoModerno
 
 /* ===== Colores ===== */
 private val Cream      = Color(0xFFFBF3E3)
-private val CreamDark  = Color(0xFFF2E7D3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa      = Color(0xFFB2754E)
 private val Graphite   = Color(0xFF2D2A26)
@@ -47,47 +46,20 @@ private fun TopWaves(modifier: Modifier = Modifier) {
         val h = size.height
 
         val terracotta = Path().apply {
-            moveTo(0f, 0f)
-            lineTo(w * 0.6f, 0f)
-
-            cubicTo(
-                w * 0.3f, h * 0.2f,
-                w * 0.2f, h * 1f,
-                w * 0.19f, h * 1.7f
-            )
-
-            cubicTo(
-                w * 0.05f, h * 1.9f,
-                w * 0.009f, h * 2.1f,
-                0f, h * 2.4f
-            )
-
-            lineTo(0f, 0f)
+            moveTo(0f, 0f); lineTo(w * 0.6f, 0f)
+            cubicTo(w * 0.3f, h * 0.2f, w * 0.2f, h * 1f, w * 0.19f, h * 1.7f)
+            cubicTo(w * 0.05f, h * 1.9f, w * 0.009f, h * 2.1f, 0f, h * 2.4f)
             close()
         }
         drawPath(terracotta, TerracottaDark, style = Fill)
 
         val cocoa = Path().apply {
-            moveTo(w, 0f)
-            lineTo(w * 0.4f, 0f)
-
-            cubicTo(
-                w * 0.7f, h * 0.2f,
-                w * 0.8f, h * 1f,
-                w * 0.81f, h * 1.7f
-            )
-
-            cubicTo(
-                w * 0.95f, h * 1.9f,
-                w * 0.991f, h * 2.1f,
-                w, h * 2.4f
-            )
-
-            lineTo(w, 0f)
+            moveTo(w, 0f); lineTo(w * 0.4f, 0f)
+            cubicTo(w * 0.7f, h * 0.2f, w * 0.8f, h * 1f, w * 0.81f, h * 1.7f)
+            cubicTo(w * 0.95f, h * 1.9f, w * 0.991f, h * 2.1f, w, h * 2.4f)
             close()
         }
         drawPath(cocoa, Cocoa.copy(alpha = 0.30f), style = Fill)
-
     }
 }
 
@@ -97,6 +69,7 @@ fun PantallaPerfilUI(
     email: String,
     celular: String,
     pais: String,
+    photoUrl: String,
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onFavoritos: () -> Unit,
@@ -115,7 +88,6 @@ fun PantallaPerfilUI(
                     .align(Alignment.TopCenter)
             ) {
                 TopWaves(Modifier.fillMaxSize())
-
 
                 IconButton(
                     onClick = onBack,
@@ -155,19 +127,28 @@ fun PantallaPerfilUI(
                     .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Avatar
+                // Avatar (URL o drawable local)
                 Box(
                     modifier = Modifier
                         .size(220.dp)
                         .clip(CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.perfil),
-                        contentDescription = "Avatar",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
+                    if (photoUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = photoUrl,
+                            contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(id = R.drawable.perfil),
+                            contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(2.dp))
@@ -178,12 +159,19 @@ fun PantallaPerfilUI(
                         .fillMaxWidth()
                         .background(CardWarm, RoundedCornerShape(16.dp))
                         .padding(horizontal = 14.dp, vertical = 8.dp)
-
                 ) {
-                    Text("Nombre: ${nombre.ifBlank { "(sin nombre)" }}", color = Color.White,fontFamily = MuseoModerno, fontWeight = FontWeight.SemiBold ,fontSize = 20.sp)
-                    Text("Correo: ${email.ifBlank { "(sin email)" }}",   color = Color.White,fontFamily = MuseoModerno, fontWeight = FontWeight.SemiBold,fontSize = 20.sp)
-                    Text("Celular: ${celular.ifBlank { "(sin celular)" }}", color = Color.White,fontFamily = MuseoModerno, fontWeight = FontWeight.SemiBold,fontSize = 20.sp)
-                    Text("País: ${pais.ifBlank { "(sin país)" }}",       color = Color.White,fontFamily = MuseoModerno, fontWeight = FontWeight.SemiBold,fontSize = 20.sp)
+                    Text("Nombre: ${nombre.ifBlank { "(sin nombre)" }}",
+                        color = Color.White, fontFamily = MuseoModerno,
+                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
+                    Text("Correo: ${email.ifBlank { "(sin email)" }}",
+                        color = Color.White, fontFamily = MuseoModerno,
+                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
+                    Text("Celular: ${celular.ifBlank { "(sin celular)" }}",
+                        color = Color.White, fontFamily = MuseoModerno,
+                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
+                    Text("País: ${pais.ifBlank { "(sin país)" }}",
+                        color = Color.White, fontFamily = MuseoModerno,
+                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
 
                     Spacer(Modifier.height(0.dp))
                     Button(
@@ -207,10 +195,16 @@ fun PantallaPerfilUI(
                 ) {
                     ElevatedCard(
                         onClick = onFavoritos,
-                        modifier = Modifier.weight(1f).height(110.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(110.dp),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Box(Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp))) {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(14.dp))
+                        ) {
                             Image(
                                 painter = painterResource(id = R.drawable.favoritos),
                                 contentDescription = "Favoritos",
@@ -222,16 +216,24 @@ fun PantallaPerfilUI(
                                 "Favoritos",
                                 color = Color.White,
                                 fontWeight = FontWeight.Medium,
-                                modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(12.dp)
                             )
                         }
                     }
                     ElevatedCard(
                         onClick = onChats,
-                        modifier = Modifier.weight(1f).height(110.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(110.dp),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Box(Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp))) {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(14.dp))
+                        ) {
                             Image(
                                 painter = painterResource(id = R.drawable.chats),
                                 contentDescription = "Chats",
@@ -243,7 +245,9 @@ fun PantallaPerfilUI(
                                 "Chats",
                                 color = Color.White,
                                 fontWeight = FontWeight.Medium,
-                                modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(12.dp)
                             )
                         }
                     }
@@ -253,7 +257,9 @@ fun PantallaPerfilUI(
 
                 Button(
                     onClick = onLogout,
-                    modifier = Modifier.fillMaxWidth().height(46.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFE9B0B0),
                         contentColor = Graphite
@@ -263,7 +269,6 @@ fun PantallaPerfilUI(
 
                 Spacer(Modifier.height(8.dp))
             }
-
 
             Row(
                 Modifier
@@ -289,12 +294,8 @@ fun PantallaPerfilUI(
                     )
                 }
 
-
-
-
-
                 Spacer(Modifier.width(72.dp))
             }
-            }
         }
+    }
 }

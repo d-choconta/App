@@ -269,7 +269,7 @@ fun LoginScreenUI(
                         fontSize = 17.sp
                     )
                 }
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(0.dp))
 
                 Button(
                     onClick = onLoginClick,
@@ -305,7 +305,7 @@ fun LoginScreenUI(
                     Text(authError!!, color = ErrorRed, fontSize = 13.sp)
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(0.dp))
 
                 TextButton(onClick = onRegisterClick, enabled = !loading) {
                     Text(
@@ -316,8 +316,8 @@ fun LoginScreenUI(
                         fontFamily = InriaSans
                     )
                 }
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(0.dp))
+            }
             }
         }
-    }
 }

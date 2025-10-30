@@ -25,6 +25,7 @@ object RAProductsRepo {
         LAMPARAS("lamparas", "Lámparas", "lámpara"),
         SOFAS("sofas", "Sofás", "sofá")
     }
+
     val categoriasFijas = listOf(
         Categoria.JARRONES, Categoria.CUADROS, Categoria.LAMPARAS, Categoria.SOFAS
     )
@@ -70,42 +71,6 @@ object RAProductsRepo {
             }
         }
         return out
-    }
-
-    // ==================== Favoritos (users/{uid}/favorites) ====================
-
-    /** ProductId guardados como favoritos */
-    suspend fun getFavoriteIds(uid: String): Set<String> {
-        val col = db.collection("users").document(uid).collection("favorites")
-        val snap = col.get().await()
-        return snap.documents.mapNotNull { d ->
-            val field = d.getString("productId")
-            if (!field.isNullOrBlank()) field else d.id
-        }.toSet()
-    }
-
-    /** Agrega a favoritos */
-    suspend fun addFavorite(uid: String, product: ProductoAR) {
-        val doc = db.collection("users").document(uid)
-            .collection("favorites").document(product.id)
-        doc.set(
-            mapOf(
-                "productId" to product.id,
-                "type" to product.type,
-                "addedAt" to com.google.firebase.Timestamp.now()
-            )
-        ).await()
-    }
-
-    /** Quita de favoritos */
-    suspend fun removeFavorite(uid: String, productId: String) {
-        val col = db.collection("users").document(uid).collection("favorites")
-        val byId = col.document(productId).get().await()
-        if (byId.exists()) {
-            col.document(productId).delete().await()
-            return
         }
-        val q = col.whereEqualTo("productId", productId).get().await()
-        q.documents.forEach { it.reference.delete().await() }
-    }
+
 }

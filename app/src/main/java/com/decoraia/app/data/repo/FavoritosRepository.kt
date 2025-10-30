@@ -16,7 +16,6 @@ class FavoritosRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
-    /** Escucha el set de IDs de favoritos del usuario. */
     fun listenFavoritosIds(uid: String): Flow<Set<String>> = callbackFlow {
         val reg = db.collection("users").document(uid)
             .collection("favorites")
@@ -33,7 +32,6 @@ class FavoritosRepository(
         awaitClose { reg.remove() }
     }
 
-    /** Añade/actualiza favorito. */
     suspend fun addFavorito(uid: String, item: ProductoAR) {
         val col = db.collection("users").document(uid).collection("favorites")
         val ref = col.document(item.id)
@@ -47,7 +45,6 @@ class FavoritosRepository(
         ref.set(data, SetOptions.merge()).await()
     }
 
-    /** Quita favorito. Si no existe docId=productId, hace fallback consultando por campo. */
     suspend fun removeFavorito(uid: String, productId: String) {
         val col = db.collection("users").document(uid).collection("favorites")
         val byId = col.document(productId).get().await()
@@ -59,9 +56,8 @@ class FavoritosRepository(
         for (d in q.documents) d.reference.delete().await()
     }
 
-    /** modelos por IDs usando fuente actual. */
     suspend fun loadFavoritosByIds(ids: List<String>): List<ProductoAR> {
         if (ids.isEmpty()) return emptyList()
         return RAProductsRepo.loadProductosByIds(ids)
-    }
+        }
 }
