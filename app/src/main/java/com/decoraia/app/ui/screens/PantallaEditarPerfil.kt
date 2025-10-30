@@ -21,6 +21,12 @@ import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.decoraia.app.ui.theme.InriaSans
+import androidx.compose.material3.OutlinedTextFieldDefaults
+
 
 @Composable
 fun PantallaEditarPerfil(navController: NavController) {
@@ -160,16 +166,39 @@ fun PantallaEditarPerfil(navController: NavController) {
     if (showUrlDialog) {
         AlertDialog(
             onDismissRequest = { showUrlDialog = false },
-            title = { Text("Cambiar foto de perfil", color = Graphite) },
+            title = {
+                Text(
+                    "Cambiar foto de perfil",
+                    color = Graphite,
+                    style = TextStyle(
+                        fontFamily = InriaSans,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 20.sp
+                    )
+                )
+            },
             text = {
                 OutlinedTextField(
                     value = tempUrl,
                     onValueChange = { tempUrl = it },
-                    label = { Text("URL de imagen (https://…)", color = Cocoa) },
+                    textStyle = TextStyle(
+                        fontFamily = InriaSans,
+                        fontSize = 16.sp
+                    ),
+                    label = {
+                        Text(
+                            "URL de imagen (https://…)",
+                            color = Cocoa,
+                            style = TextStyle(
+                                fontFamily = InriaSans,
+                                fontSize = 14.sp
+                            )
+                        )
+                    },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Graphite,
                         unfocusedTextColor = Graphite,
                         focusedBorderColor = Terracotta,
@@ -189,11 +218,29 @@ fun PantallaEditarPerfil(navController: NavController) {
                         scope.launch { snackbar.showSnackbar("URL inválida") }
                     }
                     showUrlDialog = false
-                }) { Text("Guardar", color = Terracotta) }
+                }) {
+                    Text(
+                        "Guardar",
+                        color = Terracotta,
+                        style = TextStyle(
+                            fontFamily = InriaSans,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
+                }
             },
             dismissButton = {
                 TextButton(onClick = { showUrlDialog = false }) {
-                    Text("Cancelar", color = Cocoa)
+                    Text(
+                        "Cancelar",
+                        color = Cocoa,
+                        style = TextStyle(
+                            fontFamily = InriaSans,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    )
                 }
             },
             shape = RoundedCornerShape(18.dp),
@@ -201,6 +248,6 @@ fun PantallaEditarPerfil(navController: NavController) {
             iconContentColor = Graphite,
             titleContentColor = Graphite,
             textContentColor = Graphite
-        )
-    }
+            )
+        }
 }
