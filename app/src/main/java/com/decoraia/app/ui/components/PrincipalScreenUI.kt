@@ -43,7 +43,7 @@ private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val TerracottaDark = Color(0xFFCF8A57)
 private val Cocoa = Color(0xFFB2754E)
-private val Graphite = Color(0xFF2D2A26)
+private val Graphite = Color(0xFF484333)
 
 @Composable
 private fun TopWaves(modifier: Modifier = Modifier) {
@@ -126,7 +126,7 @@ fun PrincipalScreenUI(
     onGoIA: () -> Unit,
     onGoRA: () -> Unit,
     onGoPerfil: () -> Unit,
-    onLogoutConfirmed: () -> Unit,            // <-- se llama SOLO al confirmar
+    onLogoutConfirmed: () -> Unit,
     @DrawableRes iaImage: Int = R.drawable.ia_banner,
     @DrawableRes raImage: Int = R.drawable.ra_banner
 ) {
@@ -222,7 +222,6 @@ fun PrincipalScreenUI(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Botón Salir -> abre diálogo
                     IconButton(
                         onClick = { showLogoutDialog = true },
                         modifier = Modifier
@@ -238,7 +237,7 @@ fun PrincipalScreenUI(
                             modifier = Modifier.size(36.dp)
                         )
                     }
-                    // Botón Perfil
+
                     IconButton(
                         onClick = onGoPerfil,
                         modifier = Modifier
@@ -266,16 +265,17 @@ fun PrincipalScreenUI(
                             "Cerrar sesión",
                             color = Graphite,
                             style = TextStyle(
-                                fontFamily = MuseoModerno,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 20.sp
+                                fontFamily = InriaSans,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 20.sp,
+                                textAlign = TextAlign.Center
                             )
                         )
                     },
                     text = {
                         Text(
                             "¿Estás seguro de que deseas salir de tu cuenta?",
-                            color = Graphite,
+                            color = Cocoa,
                             style = TextStyle(
                                 fontFamily = InriaSans,
                                 fontSize = 16.sp
@@ -287,12 +287,12 @@ fun PrincipalScreenUI(
                             showLogoutDialog = false
                             onLogoutConfirmed()
                         }) {
-                            Text("Salir", color = Terracotta, fontFamily = InriaSans)
+                            Text("Salir", color = Terracotta,fontSize = 18.sp, fontFamily = InriaSans)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showLogoutDialog = false }) {
-                            Text("Cancelar", color = Cocoa, fontFamily = InriaSans)
+                            Text("Cancelar", color = Cocoa,fontSize = 18.sp, fontFamily = InriaSans)
                         }
                     },
                     shape = RoundedCornerShape(18.dp),
