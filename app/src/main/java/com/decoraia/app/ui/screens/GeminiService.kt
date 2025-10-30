@@ -169,6 +169,6 @@ Si la consulta NO es de decoración, dilo en una línea y redirige con 1-2 pregu
                 }
                 callback(msg, null)
             }
-            }
         }
+    }
 }
