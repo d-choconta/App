@@ -1,7 +1,6 @@
 package com.decoraia.app.data.repo
 
 import com.decoraia.app.data.ProductoAR
-import com.decoraia.app.data.RAProductsRepo
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -10,6 +9,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import com.decoraia.app.data.repo.RAProductsRepo
 
 class FavoritosRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
@@ -59,5 +59,5 @@ class FavoritosRepository(
     suspend fun loadFavoritosByIds(ids: List<String>): List<ProductoAR> {
         if (ids.isEmpty()) return emptyList()
         return RAProductsRepo.loadProductosByIds(ids)
-        }
+    }
 }

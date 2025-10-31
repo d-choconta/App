@@ -4,10 +4,10 @@ import android.net.Uri
 import androidx.compose.runtime.*
 import androidx.navigation.NavHostController
 import com.decoraia.app.data.ProductoAR
-import com.decoraia.app.data.RAProductsRepo
 import com.decoraia.app.data.repo.FavoritosRepository
 import com.decoraia.app.data.repo.ProductRepository
 import com.decoraia.app.data.repo.ProductRepositoryImpl
+import com.decoraia.app.data.repo.RAProductsRepo
 import com.decoraia.app.ui.components.RAModelosScreenUI
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.collectLatest
@@ -21,7 +21,6 @@ fun PantallaRAModelos(
     productRepo: ProductRepository = ProductRepositoryImpl(),
     favRepo: FavoritosRepository = FavoritosRepository()
 ) {
-    // Categoría fija
     val categoria = remember(categoryId) {
         RAProductsRepo.categoriasFijas.firstOrNull { it.id == categoryId }
             ?: RAProductsRepo.categoriasFijas.first()
@@ -34,10 +33,8 @@ fun PantallaRAModelos(
     val scope = rememberCoroutineScope()
     val uid = remember { FirebaseAuth.getInstance().currentUser?.uid }
 
-    // Favoritos (ids)
     var favoriteIds by remember { mutableStateOf(setOf<String>()) }
 
-    // 1) Cargar productos desde el repositorio (independiente de Firebase)
     LaunchedEffect(style, categoryId) {
         loading = true
         errorMsg = null
@@ -51,7 +48,6 @@ fun PantallaRAModelos(
         }
     }
 
-    // 2) Escuchar cambios de favoritos en tiempo real desde el repositorio
     LaunchedEffect(uid) {
         if (uid == null) {
             errorMsg = "Debes iniciar sesión para gestionar favoritos."
@@ -62,7 +58,6 @@ fun PantallaRAModelos(
         }
     }
 
-    // 3) Toggle favorito usando el repositorio de favoritos
     fun toggleFavorite(item: ProductoAR) {
         val currentUid = uid ?: return
         scope.launch {
@@ -77,7 +72,6 @@ fun PantallaRAModelos(
         }
     }
 
-    // 4) UI (sin estilos, tu UI component ya los aplica)
     RAModelosScreenUI(
         categoriaTitulo = categoria.label,
         modelos = modelos,

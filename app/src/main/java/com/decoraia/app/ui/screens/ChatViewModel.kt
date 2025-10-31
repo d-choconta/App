@@ -26,9 +26,6 @@ class ChatViewModel : ViewModel() {
     val messages = mutableStateListOf<ChatMessage>()
     val isSending = mutableStateOf(false)
 
-    /**
-     * Enviar SOLO texto (sin imagen).
-     */
     fun send(userText: String, context: Context) {
         if (userText.isBlank()) return
 
@@ -38,7 +35,7 @@ class ChatViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val (replyText, replyImage) =
-                    GeminiService.askGeminiSuspend(userText, null, context)
+                    GeminiService.askGeminiSuspend(userText, null, null, context)
 
                 val imageUri = replyImage?.let { bitmapToContentUri(context, it) }
 
@@ -62,10 +59,6 @@ class ChatViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Enviar texto + imagen (ambos opcionales, pero al menos uno debe existir).
-     * Úsalo tanto para imágenes de galería (content://) como las de cámara (content://).
-     */
     fun sendWithImage(userText: String, imageUri: Uri?, context: Context) {
         if (userText.isBlank() && imageUri == null) return
 
@@ -75,7 +68,7 @@ class ChatViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val (replyText, replyImage) =
-                    GeminiService.askGeminiSuspend(userText, imageUri, context)
+                    GeminiService.askGeminiSuspend(userText, imageUri, null, context)
 
                 val replyUri = replyImage?.let { bitmapToContentUri(context, it) }
 
@@ -99,10 +92,6 @@ class ChatViewModel : ViewModel() {
         }
     }
 
-    /**
-     * ✅ Overload comodín para enviar SOLO una imagen (p. ej. cuando tomas la foto con la cámara).
-     * Llama a: viewModel.sendWithImage(uri, context)
-     */
     fun sendWithImage(imageUri: Uri, context: Context) {
         sendWithImage(
             userText = "",
@@ -111,13 +100,6 @@ class ChatViewModel : ViewModel() {
         )
     }
 
-    /**
-     * Convierte un Bitmap a un content://Uri en cache usando FileProvider.
-     * Coincide con el provider declarado en el AndroidManifest:
-     * android:authorities="${applicationId}.fileprovider"
-     *
-     * Esto es más seguro/compat que usar Uri.fromFile(file).
-     */
     private fun bitmapToContentUri(context: Context, bitmap: Bitmap): Uri {
         val dir = File(context.cacheDir, "images").apply { mkdirs() }
         val file = File(dir, "reply_${System.currentTimeMillis()}.png")
@@ -126,7 +108,7 @@ class ChatViewModel : ViewModel() {
         }
         return FileProvider.getUriForFile(
             context,
-            "${context.packageName}.fileprovider",
+            "com.decoraia.app.fileprovider",
             file
         )
     }

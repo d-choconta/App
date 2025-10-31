@@ -5,8 +5,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
+import com.decoraia.app.data.ProductoAR
+import com.decoraia.app.data.repo.RAProductsRepo
 import com.google.ai.client.generativeai.GenerativeModel
-import com.google.ai.client.generativeai.type.GenerationConfig
 import com.google.ai.client.generativeai.type.content
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -16,23 +17,19 @@ import kotlinx.coroutines.withContext
 
 object GeminiService {
     private const val API_KEY = "AIzaSyCmlDOgseFuFg5jdCqiydb158s2H3T7xlQ"
-
     private val generativeModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
         apiKey = API_KEY
     )
 
-
-
-
     private val SYSTEM_PROMPT = """
-Eres DecoraIA, un asistente EXPERTO en DISEÑO y DECORACIÓN DE INTERIORES.
-Responde SIEMPRE en español y en TEXTO PLANO (sin markdown).
-Objetivo: recomendaciones claras, accionables y presupuestables.
-Da opciones por rango de precio y justifica brevemente.
-Si la consulta NO es de decoración, dilo en una línea y redirige con 1-2 preguntas útiles
-(medidas del espacio, iluminación, estilo deseado y presupuesto).
-""".trimIndent()
+        Eres DecoraIA, un asistente EXPERTO en DISEÑO y DECORACIÓN DE INTERIORES.
+        Responde SIEMPRE en español y en TEXTO PLANO (sin markdown).
+        Objetivo: recomendaciones claras, accionables y presupuestables.
+        Da opciones por rango de precio y justifica brevemente.
+        Si la consulta NO es de decoración, dilo en una línea y redirige con 1-2 preguntas útiles
+        (medidas del espacio, iluminación, estilo deseado y presupuesto).
+    """.trimIndent()
 
     private val FEWSHOT: List<Pair<String, String>> = listOf(
         "Tengo pared blanca y sofá gris. ¿Qué lámparas sugieres?" to
@@ -40,6 +37,10 @@ Si la consulta NO es de decoración, dilo en una línea y redirige con 1-2 pregu
         "¿Qué alfombra para sala pequeña con piso madera clara?" to
                 "Elige alfombra de pelo corto 160×230 en tonos neutros (beige/greige) con textura sutil. Colócala bajo el frente del sofá para ampliar visualmente. Si hay niños/mascotas, usa polipropileno fácil de limpiar."
     )
+
+    private suspend fun obtenerProductosRecomendados(style: String): List<ProductoAR> {
+        return RAProductsRepo.loadProductos(style, "sofá")
+    }
 
     private fun isOffTopic(text: String): Boolean {
         val t = text.lowercase()
@@ -100,29 +101,30 @@ Si la consulta NO es de decoración, dilo en una línea y redirige con 1-2 pregu
         return hints.none { it in t }
     }
 
-
     private fun offTopicReply(): String =
         "Soy un asistente especializado en decoración de interiores. ¿Me cuentas medidas del espacio, estilo que te gusta, iluminación y presupuesto para ayudarte mejor?"
 
     suspend fun askGeminiSuspend(
         prompt: String,
         imageUri: Uri?,
+        bitmap: Bitmap?,
         context: Context
     ): Pair<String, Bitmap?> = withContext(Dispatchers.IO) {
         val done = CompletableDeferred<Pair<String, Bitmap?>>()
-        askGemini(prompt, imageUri, context) { text, bmp -> done.complete(text to bmp) }
+        askGemini(prompt, imageUri, bitmap, context) { text, bmp -> done.complete(text to bmp) }
         done.await()
     }
 
     fun askGemini(
         prompt: String,
         imageUri: Uri?,
+        bitmap: Bitmap?,
         context: Context,
         callback: (String, Bitmap?) -> Unit
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                if (imageUri == null && isOffTopic(prompt)) {
+                if (imageUri == null && bitmap == null && isOffTopic(prompt)) {
                     callback(offTopicReply(), null)
                     return@launch
                 }
@@ -134,14 +136,19 @@ Si la consulta NO es de decoración, dilo en una línea y redirige con 1-2 pregu
                         text("Asistente: $a")
                     }
 
-                    if (imageUri != null) {
-                        context.contentResolver.openInputStream(imageUri)?.use { stream ->
-                            val bmp = BitmapFactory.decodeStream(stream)
-                            image(bmp)
+                    val imageBitmap = when {
+                        bitmap != null -> bitmap
+                        imageUri != null -> {
+                            context.contentResolver.openInputStream(imageUri)?.use { stream ->
+                                BitmapFactory.decodeStream(stream)
+                            }
                         }
+                        else -> null
                     }
 
-                    val userText = if (prompt.isBlank() && imageUri != null) {
+                    imageBitmap?.let { image(it) }
+
+                    val userText = if (prompt.isBlank() && imageBitmap != null) {
                         "Analiza la imagen y dame recomendaciones de decoración (estilo, color, iluminación y distribución)."
                     } else prompt
 

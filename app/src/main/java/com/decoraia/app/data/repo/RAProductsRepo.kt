@@ -1,18 +1,9 @@
-package com.decoraia.app.data
+package com.decoraia.app.data.repo
 
+import com.decoraia.app.data.ProductoAR
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
-
-data class ProductoAR(
-    val id: String = "",
-    val name: String = "",
-    val imageUrl: String = "",
-    val modelUrl: String = "",
-    val style: String = "",
-    val type: String = "",
-    val tags: List<String> = emptyList()
-)
 
 object RAProductsRepo {
     private val db = FirebaseFirestore.getInstance()
@@ -71,6 +62,5 @@ object RAProductsRepo {
             }
         }
         return out
-        }
-
+    }
 }

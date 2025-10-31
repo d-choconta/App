@@ -1,11 +1,13 @@
 package com.decoraia.app.ui.components
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,18 +24,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 
-/* Paleta */
 private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa = Color(0xFFB2754E)
 
-/* Modelo del mensaje */
 data class ChatMessageUI(
     val id: String,
     val text: String? = null,
@@ -41,7 +42,6 @@ data class ChatMessageUI(
     val isUser: Boolean
 )
 
-/* Header */
 @Composable
 fun ChatHeader(
     title: String,
@@ -72,9 +72,7 @@ fun ChatHeader(
                 .background(Cocoa.copy(alpha = 0.9f))
                 .border(2.dp, Terracotta, CircleShape)
                 .align(Alignment.CenterStart)
-        ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
-        }
+        ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White) }
 
         IconButton(
             onClick = onHistory,
@@ -95,7 +93,6 @@ fun ChatHeader(
     }
 }
 
-/* Burbuja del chat */
 @Composable
 private fun ChatBubble(message: ChatMessageUI) {
     val isUser = message.isUser
@@ -140,7 +137,6 @@ private fun ChatBubble(message: ChatMessageUI) {
     }
 }
 
-/* Barra de entrada */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ChatInputBar(
@@ -148,26 +144,41 @@ private fun ChatInputBar(
     onTextChange: (String) -> Unit,
     loading: Boolean,
     selectedImage: Uri?,
+    selectedBitmap: Bitmap?,
     onAttachGallery: () -> Unit,
     onAttachCamera: () -> Unit,
     onRemoveAttachment: () -> Unit,
     onSend: () -> Unit
 ) {
     Column(Modifier.fillMaxWidth()) {
-        if (selectedImage != null) {
+        if (selectedImage != null || selectedBitmap != null) {
             Row(
                 Modifier
                     .padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = rememberAsyncImagePainter(selectedImage),
-                    contentDescription = null,
+                Box(
                     modifier = Modifier
                         .size(52.dp)
-                        .clip(RoundedCornerShape(10.dp)),
-                    contentScale = ContentScale.Crop
-                )
+                        .clip(RoundedCornerShape(10.dp))
+                ) {
+                    if (selectedBitmap != null) {
+                        Image(
+                            bitmap = selectedBitmap.asImageBitmap(),
+                            contentDescription = "Imagen seleccionada de la cámara",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else if (selectedImage != null) {
+                        Image(
+                            painter = rememberAsyncImagePainter(selectedImage),
+                            contentDescription = "Imagen seleccionada de la galería",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+
                 Spacer(Modifier.width(10.dp))
                 Text("1 imagen adjunta", style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.weight(1f))
@@ -229,7 +240,7 @@ private fun ChatInputBar(
 
             FilledIconButton(
                 onClick = onSend,
-                enabled = (text.isNotBlank() || selectedImage != null) && !loading,
+                enabled = (text.isNotBlank() || selectedImage != null || selectedBitmap != null) && !loading,
                 modifier = Modifier.size(44.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(containerColor = Terracotta)
             ) {
@@ -243,7 +254,6 @@ private fun ChatInputBar(
     }
 }
 
-/* Barra inferior */
 @Composable
 private fun ChatBottomBar(
     onHome: () -> Unit,
@@ -285,14 +295,15 @@ private fun ChatBottomBar(
     }
 }
 
-/* Pantalla principal */
 @Composable
 fun ChatIAScreenUI(
     messages: List<ChatMessageUI>,
+    listState: LazyListState,
     inputText: String,
     onInputChange: (String) -> Unit,
     loading: Boolean,
     selectedImage: Uri?,
+    selectedBitmap: Bitmap?,
     onAttachGallery: () -> Unit,
     onAttachCamera: () -> Unit,
     onRemoveAttachment: () -> Unit,
@@ -311,6 +322,7 @@ fun ChatIAScreenUI(
             )
 
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
@@ -330,7 +342,6 @@ fun ChatIAScreenUI(
                         )
                     }
                 }
-                item { Spacer(Modifier.height(6.dp)) }
             }
 
             ChatInputBar(
@@ -338,6 +349,7 @@ fun ChatIAScreenUI(
                 onTextChange = onInputChange,
                 loading = loading,
                 selectedImage = selectedImage,
+                selectedBitmap = selectedBitmap,
                 onAttachGallery = onAttachGallery,
                 onAttachCamera = onAttachCamera,
                 onRemoveAttachment = onRemoveAttachment,

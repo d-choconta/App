@@ -32,10 +32,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
-import com.decoraia.app.data.RAProductsRepo
+import com.decoraia.app.data.repo.RAProductsRepo
 import com.decoraia.app.ui.theme.MuseoModerno
 
-/* ===== Colores ===== */
 private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa = Color(0xFFB2754E)
@@ -53,7 +52,6 @@ private fun HeaderObjetos(
             .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             .background(Terracotta)
     ) {
-        // Banner con título
         Box(
             modifier = Modifier
                 .padding(horizontal = 18.dp, vertical = 30.dp)
@@ -100,7 +98,6 @@ private fun HeaderObjetos(
     }
 }
 
-/* ===== Card de categoría ===== */
 private data class CategoriaItem(
     val label: String,
     @DrawableRes val image: Int,
@@ -193,35 +190,32 @@ private fun BottomActionsObjetos(onHome: () -> Unit, onProfile: () -> Unit) {
     }
 }
 
-/* ===== RAObjetosScreenUI ===== */
 @Composable
 fun RAObjetosScreenUI(
     styleTitle: String,
-    categorias: List<RAProductsRepo.Categoria>,
     onBack: () -> Unit,
     onSelectCategoria: (RAProductsRepo.Categoria) -> Unit,
     onHome: () -> Unit,
     onProfile: () -> Unit,
     @DrawableRes headerBanner: Int = R.drawable.objetos_banner,
     @DrawableRes imgJarrones: Int = R.drawable.cat_jarrones,
-    @DrawableRes imgCuadros:  Int = R.drawable.cat_cuadros,
+    @DrawableRes imgCuadros: Int = R.drawable.cat_cuadros,
     @DrawableRes imgLamparas: Int = R.drawable.cat_lamparas,
-    @DrawableRes imgSofas:    Int = R.drawable.cat_sofas
+    @DrawableRes imgSofas: Int = R.drawable.cat_sofas
 ) {
-    // Mapeo categorías -> imágenes/labels
-    fun toItem(cat: RAProductsRepo.Categoria): CategoriaItem =
-        when (cat) {
+    fun toItem(cat: RAProductsRepo.Categoria): CategoriaItem {
+        return when (cat) {
             RAProductsRepo.Categoria.JARRONES -> CategoriaItem(cat.label, imgJarrones, cat)
-            RAProductsRepo.Categoria.CUADROS  -> CategoriaItem(cat.label, imgCuadros,  cat)
+            RAProductsRepo.Categoria.CUADROS -> CategoriaItem(cat.label, imgCuadros, cat)
             RAProductsRepo.Categoria.LAMPARAS -> CategoriaItem(cat.label, imgLamparas, cat)
-            RAProductsRepo.Categoria.SOFAS    -> CategoriaItem(cat.label, imgSofas,    cat)
+            RAProductsRepo.Categoria.SOFAS -> CategoriaItem(cat.label, imgSofas, cat)
         }
+    }
 
-    val items = categorias.map(::toItem)
+    val items = RAProductsRepo.categoriasFijas.map(::toItem)
 
     Surface(color = Cream) {
         Column(Modifier.fillMaxSize()) {
-
             HeaderObjetos(
                 banner = headerBanner,
                 title = "Objetos",
@@ -246,6 +240,6 @@ fun RAObjetosScreenUI(
                 onHome = onHome,
                 onProfile = onProfile
             )
-            }
         }
+    }
 }

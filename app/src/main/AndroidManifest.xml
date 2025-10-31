@@ -2,16 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permisos básicos -->
+    <!-- Permisos básicos fuera de la etiqueta <application> -->
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- Permiso de cámara -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- Permisos para cargar imágenes (galería) -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:ignore="ScopedStorage" />
+    <!-- Permisos para acceso a almacenamiento -->
+    <!-- Para Android 9 (API nivel 28) y versiones anteriores -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+
+    <!-- Para Android 10 (API nivel 29) y versiones posteriores -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" android:targetSdkVersion="33" />
 
     <application
         android:allowBackup="true"
@@ -26,7 +27,7 @@
         <!-- FileProvider para cámara -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
+            android:authorities="com.decoraia.app.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
