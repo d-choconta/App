@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import com.decoraia.app.ui.components.ChatIAScreenUI
-import com.decoraia.app.ui.components.ChatMessageUI
+import com.decoraia.app.ui.components.ChatMessageUIModel
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -37,78 +37,32 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import com.decoraia.app.data.repo.RAProductsRepo
 
+// ===== Heurísticas para estilo/tipo del catálogo =====
+private fun guessStyleToDb(text: String): String {
+    val t = text.lowercase()
+    return when {
+        "mediter" in t -> "mediterraneo"
+        "minimal" in t -> "minimalista"
+        "industrial" in t -> "industrial"
+        "clásic" in t || "clasico" in t || "clasíc" in t -> "clasico"
+        else -> "mediterraneo" // por defecto
+    }
+}
+
+// En tu colección 'products' el type es "lampara"
+private fun guessTypeToDb(@Suppress("UNUSED_PARAMETER") text: String): String = "lampara"
+
+// ===== Modelo interno =====
 data class MensajeIA(
     val id: Long = System.nanoTime(),
     val texto: String,
     val esUsuario: Boolean,
-    val imageUri: Uri? = null,
-    val bitmap: Bitmap? = null
+    val imageUri: Uri? = null,           // puede ser content:// o https://
+    val bitmap: Bitmap? = null,
+    val productImageUrl: String? = null  // si la IA devuelve una sola url
 )
-/** Extrae opciones numeradas del último mensaje del asistente (1) …, 1. …, 1: …, 1- …) */
-private data class OpcionesExtraidas(val items: List<String>)
-
-private fun extraerOpcionesDelUltimoAsistente(historial: List<MensajeIA>): OpcionesExtraidas? {
-    val ultimoAsistente = historial.lastOrNull { !it.esUsuario }?.texto ?: return null
-    val opciones = mutableListOf<String>()
-    val regex = Regex("""^\s*(\d+)[\)\.\-:]\s*(.+)$""") // 1) xxx | 1. xxx | 1- xxx | 1: xxx
-    ultimoAsistente.lines().forEach { line ->
-        val m = regex.find(line.trim())
-        if (m != null) {
-            val texto = m.groupValues[2].trim()
-            if (texto.isNotBlank()) opciones += texto
-        }
-    }
-    return if (opciones.isNotEmpty()) OpcionesExtraidas(opciones) else null
-}
-
-/** Detecta “opción 1”, “la 2”, “primera/segunda/tercera…”. Devuelve índice 0-based. */
-private fun detectarIndiceElegido(userText: String, total: Int): Int? {
-    val t = userText.lowercase()
-
-    // número explícito (1, 2, 3…)
-    Regex("""\b(\d{1,2})\b""").find(t)?.let { m ->
-        val n = m.groupValues[1].toIntOrNull()
-        if (n != null && n in 1..total) return n - 1
-    }
-
-    // ordinales más comunes en español
-    val mapa = mapOf(
-        "primera" to 0, "1ra" to 0, "1era" to 0,
-        "segunda" to 1, "2da" to 1,
-        "tercera" to 2, "3ra" to 2,
-        "cuarta" to 3,  "4ta" to 3,
-        "quinta" to 4,  "5ta" to 4
-    )
-    for ((k, v) in mapa) if (t.contains(k) && v < total) return v
-
-    // frases tipo “me quedo con la X”, “la opción X”
-    Regex("""opci[oó]n\s+(\d{1,2})""").find(t)?.let { m ->
-        val n = m.groupValues[1].toIntOrNull()
-        if (n != null && n in 1..total) return n - 1
-    }
-    return null
-}
-
-/** Prompt compacto con CONTEXTO para que no repita introducción */
-private fun buildContextualPrompt(historial: List<MensajeIA>, userText: String): String {
-    val slice = historial.takeLast(12) // últimos turnos
-    val sb = StringBuilder()
-    sb.appendLine(
-        """
-        Eres un asesor de decoración. No repitas saludos ni presentaciones. 
-        Continúa la conversación según el contexto y avanza sin reexplicar lo anterior.
-        """.trimIndent()
-    )
-    sb.appendLine("\nContexto reciente:")
-    slice.forEach { m ->
-        val who = if (m.esUsuario) "Usuario" else "Asistente"
-        if (m.texto.isNotBlank()) sb.appendLine("- $who: ${m.texto.take(400)}")
-    }
-    sb.appendLine("\nUsuario ahora dice: $userText")
-    sb.appendLine("\nResponde breve y accionable, siguiendo esa intención.")
-    return sb.toString()
-}
 
 @Composable
 fun PantallaChatIA(
@@ -131,99 +85,73 @@ fun PantallaChatIA(
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
 
-    val pickFromGallery = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri != null) {
-            selectedImage = uri
-            selectedBitmap = null
-        }
+    // Pickers
+    val pickFromGallery = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) { selectedImage = uri; selectedBitmap = null }
     }
-
-    val takePhoto = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicturePreview()
-    ) { bmp ->
-        if (bmp != null) {
-            selectedBitmap = bmp
-            selectedImage = null
-        } else {
-            scope.launch { snackbarHostState.showSnackbar("No se pudo tomar la foto") }
-        }
+    val takePhoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bmp ->
+        if (bmp != null) { selectedBitmap = bmp; selectedImage = null }
+        else scope.launch { snackbarHostState.showSnackbar("No se pudo tomar la foto") }
     }
-
-    val requestCameraPermission = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            takePhoto.launch()
-        } else {
-            scope.launch { snackbarHostState.showSnackbar("Permiso de cámara denegado") }
-        }
+    val requestCameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) takePhoto.launch() else scope.launch { snackbarHostState.showSnackbar("Permiso de cámara denegado") }
     }
 
     var sessionId by remember { mutableStateOf<String?>(null) }
     var pusoTitulo by remember { mutableStateOf(false) }
 
+    // Cargar historial
     LaunchedEffect(chatId) {
-        val uid = auth.currentUser?.uid
-        if (uid == null) {
-            snackbarHostState.showSnackbar("Debes iniciar sesión para chatear")
-            return@LaunchedEffect
+        val uid = auth.currentUser?.uid ?: run {
+            snackbarHostState.showSnackbar("Debes iniciar sesión para chatear"); return@LaunchedEffect
         }
-
         if (chatId != null) {
             sessionId = chatId
             try {
                 val qs = db.collection("sessions").document(chatId)
                     .collection("messages")
                     .orderBy("createdAt", Query.Direction.ASCENDING)
-                    .get()
-                    .await()
+                    .get().await()
 
                 listaMensajes.clear()
                 val historial = qs.documents.map { d ->
                     val role = d.getString("role").orEmpty()
                     val text = d.getString("text").orEmpty()
                     val imageUrl = d.getString("imageUrl")
+                    val productUrl = d.getString("productImageUrl")
                     MensajeIA(
                         id = d.getTimestamp("createdAt")?.toDate()?.time ?: System.nanoTime(),
                         texto = text,
                         esUsuario = (role == "user"),
-                        imageUri = imageUrl?.toUri()
+                        imageUri = (productUrl ?: imageUrl)?.toUri(),
+                        productImageUrl = productUrl
                     )
                 }
                 listaMensajes.addAll(historial)
-
             } catch (e: Exception) {
                 scope.launch { snackbarHostState.showSnackbar("Error cargando mensajes: ${e.message}") }
             }
         }
     }
 
-    // Efecto para hacer scroll automático
+    // Scroll auto
     LaunchedEffect(listaMensajes.size) {
-        if (listaMensajes.isNotEmpty()) {
-            listState.animateScrollToItem(listaMensajes.size - 1)
-        }
+        if (listaMensajes.isNotEmpty()) listState.animateScrollToItem(listaMensajes.size - 1)
     }
 
-    val uiMessages = listaMensajes.map { m ->
-        ChatMessageUI(
-            id = m.id.toString(), // Usar el ID estable
+    // Mapear a la UI
+    val uiMessages: List<ChatMessageUIModel> = listaMensajes.map { m ->
+        ChatMessageUIModel(
+            id = m.id.toString(),
             text = m.texto,
             imageUri = m.imageUri,
+            productImageUrl = m.productImageUrl,
             isUser = m.esUsuario
         )
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding)) {
             ChatIAScreenUI(
                 messages = uiMessages,
                 listState = listState,
@@ -234,29 +162,23 @@ fun PantallaChatIA(
                 selectedBitmap = selectedBitmap,
                 onAttachGallery = { pickFromGallery.launch("image/*") },
                 onAttachCamera = { requestCameraPermission.launch(android.Manifest.permission.CAMERA) },
-                onRemoveAttachment = {
-                    selectedImage = null
-                    selectedBitmap = null
-                },
+                onRemoveAttachment = { selectedImage = null; selectedBitmap = null },
                 onSend = {
                     scope.launch {
-                        val uid = auth.currentUser?.uid
-                        if (uid == null) {
-                            snackbarHostState.showSnackbar("Debes iniciar sesión para chatear")
-                            return@launch
+                        val uid = auth.currentUser?.uid ?: run {
+                            snackbarHostState.showSnackbar("Debes iniciar sesión para chatear"); return@launch
                         }
-
                         val sid = sessionId ?: run {
-                            val ref = db.collection("sessions")
-                                .add(mapOf(
+                            val ref = db.collection("sessions").add(
+                                mapOf(
                                     "ownerId" to uid,
                                     "title" to "Nueva conversación",
                                     "createdAt" to Timestamp.now(),
                                     "lastMessageAt" to Timestamp.now(),
                                     "active" to true
-                                )).await().id
-                            sessionId = ref
-                            ref
+                                )
+                            ).await().id
+                            sessionId = ref; ref
                         }
 
                         enviarMensajeConGemini(
@@ -268,10 +190,7 @@ fun PantallaChatIA(
                             bitmap = selectedBitmap,
                             listaMensajes = listaMensajes,
                             focus = focus,
-                            onStart = {
-                                loading = true
-                                prompt = ""
-                            },
+                            onStart = { loading = true; prompt = "" },
                             onDone = {
                                 loading = false
                                 selectedImage = null
@@ -280,8 +199,7 @@ fun PantallaChatIA(
                             onError = { msg -> scope.launch { snackbarHostState.showSnackbar(msg) } },
                             setTitleIfNeeded = { firstText ->
                                 if (!pusoTitulo && firstText.isNotBlank()) {
-                                    db.collection("sessions").document(sid)
-                                        .update("title", firstText.take(40))
+                                    db.collection("sessions").document(sid).update("title", firstText.take(40))
                                     pusoTitulo = true
                                 }
                             }
@@ -291,40 +209,36 @@ fun PantallaChatIA(
                 },
                 onBack = { navController?.popBackStack() },
                 onHistory = { navController?.navigate("chatguardados") },
-                onHome = {
-                    navController?.navigate("principal") { popUpTo(0) { inclusive = true } }
-                },
+                onHome = { navController?.navigate("principal") { popUpTo(0) { inclusive = true } } },
                 onProfile = { navController?.navigate("perfil") }
             )
         }
     }
 }
 
+// ===== Upload helpers =====
 suspend fun uploadImageToStorage(sessionId: String, imageUri: Uri, context: Context): String? {
     val storage = FirebaseStorage.getInstance()
     val imageRef = storage.reference.child("sessions/$sessionId/${UUID.randomUUID()}.jpg")
-
     return try {
-        context.contentResolver.openInputStream(imageUri)?.let { inputStream ->
-            imageRef.putStream(inputStream).await()
+        context.contentResolver.openInputStream(imageUri)?.let { input ->
+            imageRef.putStream(input).await()
             imageRef.downloadUrl.await().toString()
         }
     } catch (e: Exception) {
-        Log.e("PantallaChatIA", "Error al subir la imagen", e)
-        null
+        Log.e("PantallaChatIA", "Error al subir la imagen", e); null
     }
 }
 
 suspend fun uploadBitmapToStorage(sessionId: String, bitmap: Bitmap, context: Context): String? {
-    val tempFile = File(context.cacheDir, "${UUID.randomUUID()}.jpg")
-    FileOutputStream(tempFile).use {
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it)
-    }
-    val result = uploadImageToStorage(sessionId, tempFile.toUri(), context)
-    tempFile.delete()
-    return result
+    val temp = File(context.cacheDir, "${UUID.randomUUID()}.jpg")
+    FileOutputStream(temp).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+    val url = uploadImageToStorage(sessionId, temp.toUri(), context)
+    temp.delete()
+    return url
 }
 
+// ===== Flujo principal =====
 private fun enviarMensajeConGemini(
     context: Context,
     db: FirebaseFirestore,
@@ -345,22 +259,10 @@ private fun enviarMensajeConGemini(
     focus.clearFocus()
     onStart()
 
-    // --- 1) “Memoria”: normalizar lo que escribió el usuario (resuelve "opción 2", "la segunda", etc.)
-    val opciones = extraerOpcionesDelUltimoAsistente(listaMensajes)
-    val textoUsuarioNormalizado: String = if (opciones != null) {
-        val idx = detectarIndiceElegido(textoPlano, opciones.items.size)
-        if (idx != null) opciones.items[idx] else textoPlano
-    } else {
-        textoPlano
-    }
-
-    // --- 2) Construir prompt con contexto reciente para que NO repita saludos
-    val promptConContexto = buildContextualPrompt(historial = listaMensajes, userText = textoUsuarioNormalizado)
-
-    // --- 3) Pinta inmediatamente el mensaje del usuario en la UI (con el texto normalizado)
+    // pinta el turno del usuario
     val userMessage = MensajeIA(
         id = System.nanoTime(),
-        texto = textoUsuarioNormalizado,
+        texto = textoPlano,
         esUsuario = true,
         imageUri = imageUri,
         bitmap = bitmap
@@ -370,7 +272,7 @@ private fun enviarMensajeConGemini(
     CoroutineScope(Dispatchers.IO).launch {
         val sessionRef = db.collection("sessions").document(sessionId)
         try {
-            // --- 4) Sube imagen si existe y actualiza el mensaje con su URL
+            // subir imagen si la hay
             val imageUrl: String? = when {
                 imageUri != null -> uploadImageToStorage(sessionId, imageUri, context)
                 bitmap != null   -> uploadBitmapToStorage(sessionId, bitmap, context)
@@ -388,54 +290,88 @@ private fun enviarMensajeConGemini(
                 }
             }
 
-            // --- 5) Persiste el turno del usuario (usa el texto normalizado)
-            val mensajeMap = mutableMapOf<String, Any>(
+            // persistir turno usuario
+            val userMap = mutableMapOf<String, Any>(
                 "role" to "user",
-                "text" to textoUsuarioNormalizado,
+                "text" to textoPlano,
                 "createdAt" to Timestamp.now()
             )
-            if (imageUrl != null) mensajeMap["imageUrl"] = imageUrl
-            sessionRef.collection("messages").add(mensajeMap).await()
+            if (imageUrl != null) userMap["imageUrl"] = imageUrl
+            sessionRef.collection("messages").add(userMap).await()
             sessionRef.update("lastMessageAt", Timestamp.now()).await()
 
-            // Título la primera vez
-            setTitleIfNeeded(textoUsuarioNormalizado.ifBlank { "Imagen" })
+            setTitleIfNeeded(textoPlano.ifBlank { "Imagen" })
 
-            // --- 6) Llama a Gemini con CONTEXTO (evita saludos repetidos)
-            val (respuestaDeGemini, _) = GeminiService.askGeminiSuspend(
-                prompt = promptConContexto,
-                imageUri = imageUri, // si enviaste galería
-                bitmap   = bitmap,   // si enviaste cámara
-                context  = context
+            // ===== Llamar a Gemini =====
+            val (respuesta, _) = GeminiService.askGeminiSuspend(
+                prompt = textoPlano,
+                imageUri = imageUri,
+                bitmap = bitmap,
+                context = context
             )
 
-            // --- 7) Pinta respuesta y persiste
+            // 1) Extraer URLs de imágenes devueltas por el modelo
+            val urlRegex = Regex("""https?://\S+?\.(?:jpg|jpeg|png|webp)(\?\S+)?""", RegexOption.IGNORE_CASE)
+            var urls = urlRegex.findAll(respuesta).map { it.value }.toList()
+            val textoLimpio = respuesta.replace(urlRegex, "").replace(Regex("\n{3,}"), "\n\n").trim()
+
+            // 2) FALLBACK al catálogo si el modelo no pegó URLs
+            if (urls.isEmpty()) {
+                try {
+                    val styleDb = guessStyleToDb(textoPlano)
+                    val typeDb  = guessTypeToDb(textoPlano)
+                    val productos = RAProductsRepo
+                        .loadProductos(style = styleDb, typeValue = typeDb)
+                        .filter { it.imageUrl.startsWith("http") }
+                        .take(3)
+                    urls = productos.map { it.imageUrl }
+                    Log.d("PantallaChatIA", "Fallback catálogo: style=$styleDb type=$typeDb count=${urls.size}")
+                } catch (e: Exception) {
+                    Log.e("PantallaChatIA", "Fallback catálogo falló: ${e.message}", e)
+                }
+            }
+
             withContext(Dispatchers.Main) {
-                listaMensajes.add(
-                    MensajeIA(
-                        id = System.nanoTime(),
-                        texto = respuestaDeGemini,
-                        esUsuario = false
+                // 3) mensaje de texto (si queda)
+                if (textoLimpio.isNotBlank()) {
+                    listaMensajes.add(
+                        MensajeIA(
+                            id = System.nanoTime(),
+                            texto = textoLimpio,
+                            esUsuario = false
+                        )
                     )
-                )
+                }
+                // 4) imágenes como mensajes separados
+                urls.forEach { u ->
+                    listaMensajes.add(
+                        MensajeIA(
+                            id = System.nanoTime(),
+                            texto = "",
+                            esUsuario = false,
+                            imageUri = u.toUri(),
+                            productImageUrl = u
+                        )
+                    )
+                }
                 onDone()
             }
 
-            sessionRef.collection("messages").add(
-                mapOf(
-                    "role" to "assistant",
-                    "text" to respuestaDeGemini,
-                    "createdAt" to Timestamp.now()
-                )
-            ).await()
+            // 5) Guardar en Firestore
+            if (textoLimpio.isNotBlank()) {
+                sessionRef.collection("messages").add(
+                    mapOf("role" to "assistant", "text" to textoLimpio, "createdAt" to Timestamp.now())
+                ).await()
+            }
+            urls.forEach { u ->
+                sessionRef.collection("messages").add(
+                    mapOf("role" to "assistant", "productImageUrl" to u, "createdAt" to Timestamp.now())
+                ).await()
+            }
             sessionRef.update("lastMessageAt", Timestamp.now()).await()
 
         } catch (e: Exception) {
-            Log.e("GeminiService", "Error en enviarMensajeConGemini", e)
-            withContext(Dispatchers.Main) {
-                onDone()
-                onError("Error: ${e.message}")
-            }
+            withContext(Dispatchers.Main) { onDone(); onError("Error: ${e.message}") }
         }
     }
 }

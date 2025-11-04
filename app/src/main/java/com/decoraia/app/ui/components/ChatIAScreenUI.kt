@@ -2,7 +2,6 @@ package com.decoraia.app.ui.components
 
 import android.graphics.Bitmap
 import android.net.Uri
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -29,21 +28,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.rememberAsyncImagePainter
+import coil.compose.AsyncImage
 
 private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa = Color(0xFFB2754E)
 
-data class ChatMessageUI(
-    val id: String,
-    val text: String? = null,
-    val imageUri: Uri? = null,
-    val isUser: Boolean
-)
-
 @Composable
-fun ChatHeader(
+private fun ChatHeader(
     title: String,
     onBack: () -> Unit,
     onHistory: () -> Unit
@@ -62,7 +54,6 @@ fun ChatHeader(
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.align(Alignment.Center)
         )
-
         IconButton(
             onClick = onBack,
             modifier = Modifier
@@ -73,7 +64,6 @@ fun ChatHeader(
                 .border(2.dp, Terracotta, CircleShape)
                 .align(Alignment.CenterStart)
         ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White) }
-
         IconButton(
             onClick = onHistory,
             modifier = Modifier
@@ -83,57 +73,7 @@ fun ChatHeader(
                 .background(Cocoa.copy(alpha = 0.9f))
                 .border(2.dp, Terracotta, CircleShape)
                 .align(Alignment.CenterEnd)
-        ) {
-            Icon(
-                imageVector = Icons.Filled.History,
-                contentDescription = "Historial",
-                tint = Color.White
-            )
-        }
-    }
-}
-
-@Composable
-private fun ChatBubble(message: ChatMessageUI) {
-    val isUser = message.isUser
-    val align = if (isUser) Arrangement.End else Arrangement.Start
-    val bg = if (isUser) Color(0xFFFFFFFF) else Color(0xFFF6EFE6)
-    val shape = if (isUser)
-        RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomEnd = 0.dp, bottomStart = 18.dp)
-    else
-        RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomEnd = 18.dp, bottomStart = 0.dp)
-
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = align
-    ) {
-        Column(
-            Modifier
-                .widthIn(max = 290.dp)
-                .clip(shape)
-                .background(bg)
-                .padding(10.dp)
-        ) {
-            message.imageUri?.let { uri ->
-                Image(
-                    painter = rememberAsyncImagePainter(uri),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 120.dp)
-                        .clip(RoundedCornerShape(12.dp)),
-                    contentScale = ContentScale.Crop
-                )
-                if (!message.text.isNullOrBlank()) Spacer(Modifier.height(6.dp))
-            }
-            if (!message.text.isNullOrBlank()) {
-                Text(
-                    message.text!!,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF2E2E2E)
-                )
-            }
-        }
+        ) { Icon(Icons.Filled.History, contentDescription = "Historial", tint = Color.White) }
     }
 }
 
@@ -153,8 +93,7 @@ private fun ChatInputBar(
     Column(Modifier.fillMaxWidth()) {
         if (selectedImage != null || selectedBitmap != null) {
             Row(
-                Modifier
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
@@ -162,23 +101,23 @@ private fun ChatInputBar(
                         .size(52.dp)
                         .clip(RoundedCornerShape(10.dp))
                 ) {
-                    if (selectedBitmap != null) {
-                        Image(
-                            bitmap = selectedBitmap.asImageBitmap(),
-                            contentDescription = "Imagen seleccionada de la cámara",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else if (selectedImage != null) {
-                        Image(
-                            painter = rememberAsyncImagePainter(selectedImage),
-                            contentDescription = "Imagen seleccionada de la galería",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
+                    when {
+                        selectedBitmap != null ->
+                            androidx.compose.foundation.Image(
+                                bitmap = selectedBitmap.asImageBitmap(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        selectedImage != null ->
+                            AsyncImage(
+                                model = selectedImage,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
                     }
                 }
-
                 Spacer(Modifier.width(10.dp))
                 Text("1 imagen adjunta", style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.weight(1f))
@@ -203,18 +142,11 @@ private fun ChatInputBar(
                         .clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.85f))
                         .border(1.dp, Terracotta, CircleShape)
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Adjuntar", tint = Cocoa)
-                }
+                ) { Icon(Icons.Filled.Add, contentDescription = "Adjuntar", tint = Cocoa) }
+
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    DropdownMenuItem(
-                        text = { Text("Galería") },
-                        onClick = { menuOpen = false; onAttachGallery() }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Cámara") },
-                        onClick = { menuOpen = false; onAttachCamera() }
-                    )
+                    DropdownMenuItem(text = { Text("Galería") }, onClick = { menuOpen = false; onAttachGallery() })
+                    DropdownMenuItem(text = { Text("Cámara") }, onClick = { menuOpen = false; onAttachCamera() })
                 }
             }
 
@@ -297,7 +229,7 @@ private fun ChatBottomBar(
 
 @Composable
 fun ChatIAScreenUI(
-    messages: List<ChatMessageUI>,
+    messages: List<ChatMessageUIModel>,
     listState: LazyListState,
     inputText: String,
     onInputChange: (String) -> Unit,
@@ -315,11 +247,7 @@ fun ChatIAScreenUI(
 ) {
     Surface(color = Cream) {
         Column(Modifier.fillMaxSize()) {
-            ChatHeader(
-                title = "Chat DecoraIA",
-                onBack = onBack,
-                onHistory = onHistory
-            )
+            ChatHeader(title = "Chat DecoraIA", onBack = onBack, onHistory = onHistory)
 
             LazyColumn(
                 state = listState,
@@ -330,7 +258,7 @@ fun ChatIAScreenUI(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(messages, key = { it.id }) { msg ->
-                    ChatBubble(message = msg)
+                    ChatMessageUI(message = msg)
                 }
                 if (loading) {
                     item {

@@ -1,120 +1,94 @@
-package com.decoraia.app.ui.screens
+package com.decoraia.app.ui.components
 
-import android.content.Context
-import android.graphics.Bitmap
 import android.net.Uri
-import androidx.core.content.FileProvider
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.decoraia.app.data.ProductoAR
 
-data class ChatMessage(
-    val id: Long = System.nanoTime(),
-    val texto: String,
-    val esUsuario: Boolean,
-    val imageUri: Uri? = null
+// Modelo para mostrar mensajes en el chat
+data class ChatMessageData(
+    val id: String,
+    val text: String? = null,
+    val imageUri: Uri? = null,               // Imagen local (enviada por el usuario)
+    val productImageUrl: String? = null,     // Imagen de un solo producto (opcional)
+    val productos: List<ProductoAR>? = null, // Lista de productos del catálogo
+    val isUser: Boolean
 )
 
-class ChatViewModel : ViewModel() {
+@Composable
+fun ChatMessageUI(message: ChatMessageData) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(6.dp),
+        horizontalAlignment = if (message.isUser) Alignment.End else Alignment.Start
+    ) {
+        // (1) Imagen local del usuario (Uri)
+        message.imageUri?.let { uri ->
+            AsyncImage(
+                model = uri,
+                contentDescription = "Imagen enviada",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .clip(RoundedCornerShape(14.dp))
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+        }
 
-    val messages = mutableStateListOf<ChatMessage>()
-    val isSending = mutableStateOf(false)
+        // (2) Imagen individual (si existe)
+        message.productImageUrl?.let { url ->
+            AsyncImage(
+                model = url,
+                contentDescription = "Imagen del producto",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .clip(RoundedCornerShape(14.dp))
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+        }
 
-    fun send(userText: String, context: Context) {
-        if (userText.isBlank()) return
+        // (3) Varias imágenes de productos (si existen en la lista)
+        message.productos?.takeIf { it.isNotEmpty() }?.forEach { producto ->
+            AsyncImage(
+                model = producto.imageUrl,
+                contentDescription = producto.name.ifBlank { "Producto recomendado" },
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .clip(RoundedCornerShape(14.dp))
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+        }
 
-        messages += ChatMessage(texto = userText, esUsuario = true)
-        isSending.value = true
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val (replyText, replyImage) =
-                    GeminiService.askGeminiSuspend(userText, null, null, context)
-
-                val imageUri = replyImage?.let { bitmapToContentUri(context, it) }
-
-                withContext(Dispatchers.Main) {
-                    messages += ChatMessage(
-                        texto = replyText,
-                        esUsuario = false,
-                        imageUri = imageUri
-                    )
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    messages += ChatMessage(
-                        texto = "Error al procesar: ${e.message ?: "desconocido"}",
-                        esUsuario = false
-                    )
-                }
-            } finally {
-                withContext(Dispatchers.Main) { isSending.value = false }
+        // (4) Texto del mensaje
+        message.text?.takeIf { it.isNotBlank() }?.let { txt ->
+            val bgColor = if (message.isUser) Color(0xFF2196F3) else Color(0xFFEFE5D6)
+            val textColor = if (message.isUser) Color.White else Color(0xFF2E2E2E)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(bgColor)
+                    .padding(10.dp)
+            ) {
+                Text(
+                    text = txt,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = textColor
+                )
             }
         }
-    }
-
-    fun sendWithImage(userText: String, imageUri: Uri?, context: Context) {
-        if (userText.isBlank() && imageUri == null) return
-
-        messages += ChatMessage(texto = userText, esUsuario = true, imageUri = imageUri)
-        isSending.value = true
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val (replyText, replyImage) =
-                    GeminiService.askGeminiSuspend(userText, imageUri, null, context)
-
-                val replyUri = replyImage?.let { bitmapToContentUri(context, it) }
-
-                withContext(Dispatchers.Main) {
-                    messages += ChatMessage(
-                        texto = replyText,
-                        esUsuario = false,
-                        imageUri = replyUri
-                    )
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    messages += ChatMessage(
-                        texto = "Error al procesar: ${e.message ?: "desconocido"}",
-                        esUsuario = false
-                    )
-                }
-            } finally {
-                withContext(Dispatchers.Main) { isSending.value = false }
-            }
-        }
-    }
-
-    fun sendWithImage(imageUri: Uri, context: Context) {
-        sendWithImage(
-            userText = "",
-            imageUri = imageUri,
-            context = context
-        )
-    }
-
-    private fun bitmapToContentUri(context: Context, bitmap: Bitmap): Uri {
-        val dir = File(context.cacheDir, "images").apply { mkdirs() }
-        val file = File(dir, "reply_${System.currentTimeMillis()}.png")
-        FileOutputStream(file).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-        }
-        return FileProvider.getUriForFile(
-            context,
-            "com.decoraia.app.fileprovider",
-            file
-        )
-    }
-
-    fun reset() {
-        messages.clear()
-        messages += ChatMessage(texto = "Conversación reiniciada 😊", esUsuario = false)
     }
 }
