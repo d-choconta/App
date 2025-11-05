@@ -32,7 +32,6 @@ fun PantallaRAModelos(
 
     val scope = rememberCoroutineScope()
     val uid = remember { FirebaseAuth.getInstance().currentUser?.uid }
-
     var favoriteIds by remember { mutableStateOf(setOf<String>()) }
 
     LaunchedEffect(style, categoryId) {
@@ -80,7 +79,15 @@ fun PantallaRAModelos(
         errorMsg = errorMsg,
         onBack = { nav.popBackStack() },
         onSelectModelo = { modelo ->
-            val encoded = Uri.encode(modelo.modelUrl)
+            val raw = modelo.modelUrl.orEmpty()
+            if (raw.isBlank()) {
+                errorMsg = "Este modelo no tiene URL 3D configurada."
+                return@RAModelosScreenUI
+            }
+
+            android.util.Log.d("AR_FLOW", "onSelect - modelUrl desde lista: $raw")
+
+            val encoded = Uri.encode(raw)
             nav.navigate("arviewer?modelUrl=$encoded")
         },
         onToggleFavorite = { producto -> toggleFavorite(producto) },

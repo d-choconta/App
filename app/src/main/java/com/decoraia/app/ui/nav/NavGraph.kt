@@ -20,20 +20,12 @@ fun AppNavGraph(navController: NavHostController) {
         composable("acercade") { PantallaAcercaDe(navController) }
         composable("ajustescuenta") { PantallaAjustesCuenta(navController) }
         composable("carga") { PantallaCarga(navController) }
-
-        // Historial
         composable("chatguardados") { PantallaChatGuardados(navController) }
 
-        // ---- CHAT ----
-        // 1) Chat nuevo (sin id); la primera vez que envíes mensaje, creas la sesión
         composable("chatia") {
-            // Asegúrate que PantallaChatIA acepte chatId opcional
-            // fun PantallaChatIA(navController: NavController, chatId: String? = null)
             PantallaChatIA(navController = navController, chatId = null)
         }
 
-
-        // 2) Chat existente (con id)
         composable(
             route = "chatia/{sessionId}",
             arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
@@ -41,7 +33,6 @@ fun AppNavGraph(navController: NavHostController) {
             val sessionId = backStackEntry.arguments?.getString("sessionId")!!
             PantallaChatIA(navController = navController, chatId = sessionId)
         }
-        // ---- FIN CHAT ----
 
         composable("configuracion") { PantallaConfiguracion(navController) }
         composable("descripcion") { PantallaDescripcion(navController) }
@@ -56,12 +47,9 @@ fun AppNavGraph(navController: NavHostController) {
         composable("registro") { PantallaRegistro(navController) }
         composable("salidaperfil") { PantallaSalidaPerfil(navController) }
         composable("soporte") { PantallaSoporte(navController) }
-        composable("visualizacion") { PantallaVisualizacion(navController) }
 
-        // RA Estilos (sin args)
         composable("raestilos") { PantallaRAEstilos(navController) }
 
-        // RA Objetos (recibe estilo)
         composable(
             route = "raobjetos/{style}",
             arguments = listOf(navArgument("style") { type = NavType.StringType })
@@ -70,7 +58,6 @@ fun AppNavGraph(navController: NavHostController) {
             PantallaRAObjetos(navController, style = style)
         }
 
-        // RA Modelos (recibe estilo + categoría)
         composable(
             route = "ramodelos/{style}/{categoryId}",
             arguments = listOf(
@@ -83,7 +70,7 @@ fun AppNavGraph(navController: NavHostController) {
             PantallaRAModelos(navController, style = style, categoryId = categoryId)
         }
 
-        // Visor AR opcional
+        //Visor AR recibiendo modelUrl
         composable(
             route = "arviewer?modelUrl={modelUrl}",
             arguments = listOf(
@@ -93,8 +80,10 @@ fun AppNavGraph(navController: NavHostController) {
                     defaultValue = null
                 }
             )
-        ) {
-            PantallaVisualizacion(navController)
-            }
+        ) { backStackEntry ->
+            val raw = backStackEntry.arguments?.getString("modelUrl")
+            android.util.Log.d("AR_FLOW", "NavGraph - modelUrl arg: $raw")
+            PantallaVisualizacion(navController, raw)
         }
+    }
 }

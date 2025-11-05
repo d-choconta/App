@@ -62,9 +62,12 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("androidx.compose.material:material-icons-core:1.6.7")
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
 
-
-
+    // ARCore
+    implementation("com.google.ar:core:1.44.0")
+    // Material icons para Icons.Filled.ArrowBack (si lo usas)
+    implementation("androidx.compose.material:material-icons-extended:1.7.5")
 
     // ---- Generative AI (Gemini) ----
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")

@@ -8,8 +8,11 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 
-    <!-- 👇 Solución para el warning de cámara -->
+    <!-- 👇 Cámara normal -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- 👇 Habilitar ARCore pero NO obligatorio -->
+    <uses-feature android:name="android.hardware.camera.ar" android:required="false"/>
 
     <application
         android:allowBackup="true"
@@ -19,7 +22,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.App">
 
-        <!-- FileProvider (para cámara) -->
+        <!-- 👇 Meta ARCore optional -->
+        <meta-data
+            android:name="com.google.ar.core"
+            android:value="optional" />
+
+        <!-- FileProvider (para cámara normal) -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.decoraia.app.fileprovider"
