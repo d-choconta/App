@@ -106,6 +106,10 @@ GEMINI_API_KEY=TU_API_KEY_AQUI
 
 Ejecutar en dispositivo real
 
+Link de descarga del APK 
+
+https://drive.google.com/drive/folders/1x6hxvcQGiD5aOM2n0U0hI4s8GbugciNe?usp=drive_link
+
 Dispositivo con Android + soporte ARCore:
 
 👨‍💻 Profesor
@@ -117,7 +121,6 @@ Valery Martinez
 Carol Arisa
 Carlos Vargas
 Juan De La Hoz
-Daniela Choconta Rojas	
 
 
 
