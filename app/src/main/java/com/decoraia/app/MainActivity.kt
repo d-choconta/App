@@ -18,8 +18,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // (Opcional) Si ya usas google-services, esto será no-op,
-        // pero ayuda a evitar dudas en pruebas locales/emulador.
         FirebaseApp.initializeApp(this)
 
         setContent {
@@ -28,7 +26,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    // Ping/health-check a Firestore al montar la UI
                     LaunchedEffect(Unit) {
                         try {
                             val db = FirebaseFirestore.getInstance()
