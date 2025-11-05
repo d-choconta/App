@@ -51,7 +51,7 @@ private fun guessStyleToDb(text: String): String {
     }
 }
 
-// En tu colección 'products' el type es "lampara"
+// colección 'products' el type es "lampara"
 private fun guessTypeToDb(@Suppress("UNUSED_PARAMETER") text: String): String = "lampara"
 
 // ===== Modelo interno =====
@@ -372,6 +372,6 @@ private fun enviarMensajeConGemini(
 
         } catch (e: Exception) {
             withContext(Dispatchers.Main) { onDone(); onError("Error: ${e.message}") }
+            }
         }
-    }
 }
