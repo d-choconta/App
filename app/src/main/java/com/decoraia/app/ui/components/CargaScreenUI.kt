@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.MuseoModerno
 
-private val TaupeBackground = Color(0xFFB9A892)   // de fondo (similar al screenshot)
+private val TaupeBackground = Color(0xFFB9A892)
 private val White           = Color(0xFFFFFFFF)
 
 @Composable

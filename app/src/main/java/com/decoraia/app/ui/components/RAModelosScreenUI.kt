@@ -81,7 +81,7 @@ private fun HeaderModelos(
             )
         }
 
-        // Back (Cocoa + borde Terracotta) 60.dp
+        //back
         IconButton(
             onClick = onBack,
             modifier = Modifier
@@ -148,7 +148,7 @@ private fun ModeloCard(
     onToggleFavorite: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    @DrawableRes placeholder: Int = R.drawable.logo // usa tu logo si no hay imagen
+    @DrawableRes placeholder: Int = R.drawable.logo
 ) {
     Surface(
         modifier = modifier,

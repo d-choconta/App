@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,8 +28,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.min
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.MuseoModerno
 
@@ -36,7 +43,7 @@ private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
 private val Cocoa = Color(0xFFB2754E)
 
-/* ===== HEADER (Terracotta full width) ===== */
+/* ===== HEADER ===== */
 @Composable
 private fun HeaderEstilos(
     title: String,
@@ -50,7 +57,6 @@ private fun HeaderEstilos(
             .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             .background(Terracotta)
     ) {
-
         Box(
             modifier = Modifier
                 .padding(horizontal = 18.dp, vertical = 30.dp)
@@ -94,24 +100,25 @@ private fun HeaderEstilos(
                 tint = Color.White
             )
         }
-
     }
 }
 
-/* ===== CARD DE ESTILO ===== */
+/* ===== CARD ===== */
 private data class StyleItem(val name: String, @DrawableRes val image: Int)
 
 @Composable
 private fun EstiloRowCard(
     item: StyleItem,
+    height: Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier
             .fillMaxWidth()
-            .height(115.dp)
+            .height(height)
             .clip(RoundedCornerShape(22.dp))
+            .background(Color.Transparent)
             .clickable { onClick() }
     ) {
         Image(
@@ -135,6 +142,7 @@ private fun EstiloRowCard(
     }
 }
 
+/* ===== BOTTOM BAR ===== */
 @Composable
 private fun BottomActions(onHome: () -> Unit, onProfile: () -> Unit) {
     Row(
@@ -213,24 +221,31 @@ fun RAEstilosScreenUI(
     val items = estilos.map { StyleItem(it, imageFor(it)) }
 
     Surface(color = Cream) {
-        Column(Modifier.fillMaxSize()) {
-            HeaderEstilos("Estilos", headerBanner, onBack)
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val cardHeight =
+                (maxWidth * 0.28f).coerceIn(110.dp, 170.dp)
 
-            Column(
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
-            ) {
-                items.forEachIndexed { idx, item ->
-                    EstiloRowCard(
-                        item = item,
-                        onClick = { onSelectStyle(item.name) }
-                    )
-                    if (idx < items.lastIndex) Spacer(Modifier.height(14.dp))
+            Column(Modifier.fillMaxSize()) {
+                HeaderEstilos("Estilos", headerBanner, onBack)
+
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    contentPadding = PaddingValues(bottom = 8.dp)
+                ) {
+                    items(items) { item ->
+                        EstiloRowCard(
+                            item = item,
+                            height = cardHeight,
+                            onClick = { onSelectStyle(item.name) }
+                        )
+                    }
                 }
-            }
 
-            BottomActions(onHome = onHome, onProfile = onProfile)
+                BottomActions(onHome = onHome, onProfile = onProfile)
             }
         }
+    }
 }

@@ -51,7 +51,7 @@ private fun HeaderFavoritos(
             .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             .background(Terracotta)
     ) {
-        // Banner centrado
+        // Banner
         Box(
             modifier = Modifier
                 .padding(horizontal = 18.dp, vertical = 30.dp)
@@ -79,7 +79,7 @@ private fun HeaderFavoritos(
             )
         }
 
-        // Back (mismo estilo que en tus pantallas)
+        // Back
         IconButton(
             onClick = onBack,
             modifier = Modifier

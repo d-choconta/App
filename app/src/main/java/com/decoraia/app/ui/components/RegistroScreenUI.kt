@@ -88,7 +88,7 @@ fun RegistroScreenUI(
     confirmError: String? = null,
     actionError: String? = null,
     titleYOffset: Dp = (-10).dp,
-    heroHeight: Dp = 280.dp,
+    heroHeight: Dp = 230.dp,
     heroWidthFraction: Float = 0.80f
 ) {
     val focus = LocalFocusManager.current
@@ -158,7 +158,7 @@ fun RegistroScreenUI(
 
                 val shape = RoundedCornerShape(22.dp)
 
-                // Nombre — Next
+
                 OutlinedTextField(
                     value = nombre,
                     onValueChange = onNombreChange,
@@ -178,7 +178,7 @@ fun RegistroScreenUI(
                         unfocusedBorderColor = if (nombreError != null) ErrorRed else Terracotta,
                         errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
-                    // 👇 IME "Siguiente"
+
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(
                         onNext = { focus.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
@@ -188,7 +188,6 @@ fun RegistroScreenUI(
 
                 Spacer(Modifier.height(0.dp))
 
-                // Correo — teclado con @ y Next
                 OutlinedTextField(
                     value = email,
                     onValueChange = onEmailChange,
@@ -208,7 +207,7 @@ fun RegistroScreenUI(
                         unfocusedBorderColor = if (emailError != null) ErrorRed else Terracotta,
                         errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
-                    // 👇 Teclado de email y Next
+                    //Teclado de email y Next
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Email,
                         imeAction = ImeAction.Next
@@ -242,7 +241,7 @@ fun RegistroScreenUI(
                         unfocusedBorderColor = if (passwordError != null) ErrorRed else Terracotta,
                         errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
-                    // 👇 Next
+                    // Next
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     keyboardActions = KeyboardActions(
                         onNext = { focus.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
@@ -273,7 +272,7 @@ fun RegistroScreenUI(
                         unfocusedBorderColor = if (confirmError != null) ErrorRed else Terracotta,
                         errorBorderColor = ErrorRed, errorLabelColor = ErrorRed, errorCursorColor = ErrorRed
                     ),
-                    // 👇 Done: dispara el registro y cierra el teclado
+                    // Done: registro y cierra el teclado
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
                         onDone = {

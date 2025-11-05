@@ -41,7 +41,6 @@ fun OlvidoContrasenaUI(
     loading: Boolean,
     onEnviarCodigo: () -> Unit,
     onBack: () -> Unit,
-    // nuevos para mensajes inline
     emailError: String? = null,
     actionError: String? = null,
     successMessage: String? = null
@@ -110,7 +109,7 @@ fun OlvidoContrasenaUI(
 
                 Spacer(Modifier.height(20.dp))
 
-                // Usuario (opcional, sin validación)
+                // Usuario
                 OutlinedTextField(
                     value = usuario,
                     onValueChange = onUsuarioChange,
@@ -141,7 +140,7 @@ fun OlvidoContrasenaUI(
 
                 Spacer(Modifier.height(12.dp))
 
-                // Correo electrónico (con error inline)
+                // Correo electrónico
                 OutlinedTextField(
                     value = email,
                     onValueChange = onEmailChange,
@@ -202,7 +201,7 @@ fun OlvidoContrasenaUI(
                     }
                 }
 
-                // Mensajes bajo el botón (rojo error / verde éxito)
+                // Mensajes bajo el botón
                 when {
                     !actionError.isNullOrBlank() -> {
                         Spacer(Modifier.height(8.dp))

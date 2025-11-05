@@ -111,7 +111,6 @@ fun InicioScreenUI(
 
             Spacer(Modifier.height(12.dp))
 
-            // Botón 2
             Button(
                 onClick = onRegistroClick,
                 colors = ButtonDefaults.buttonColors(

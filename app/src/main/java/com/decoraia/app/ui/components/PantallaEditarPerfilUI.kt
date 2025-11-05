@@ -77,7 +77,7 @@ fun PantallaEditarPerfilUI(
     onGuardar: () -> Unit,
     onBack: () -> Unit,
     onHome: () -> Unit,
-    // NUEVOS
+
     photoUrl: String?,
     onChangePhotoClick: () -> Unit
 ) {
@@ -135,7 +135,7 @@ fun PantallaEditarPerfilUI(
                 // ===== Avatar + botón =====
                 Box(
                     modifier = Modifier
-                        .size(220.dp),   // OJO: sin clip aquí para no recortar el FAB
+                        .size(220.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     // Círculo con borde que SÍ recorta solo la foto
@@ -171,7 +171,7 @@ fun PantallaEditarPerfilUI(
                         contentColor = Color.White,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
-                            .offset(x = (-8).dp, y = (-8).dp) // un poco hacia adentro
+                            .offset(x = (-8).dp, y = (-8).dp)
                             .size(48.dp),
                     ) {
                         Icon(

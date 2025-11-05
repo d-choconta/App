@@ -11,7 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,12 +30,12 @@ import com.decoraia.app.ui.theme.InriaSans
 import com.decoraia.app.ui.theme.MuseoModerno
 
 /* ===== Colores ===== */
-private val Cream      = Color(0xFFFBF3E3)
+private val Cream = Color(0xFFFBF3E3)
 private val Terracotta = Color(0xFFE1A172)
-private val Cocoa      = Color(0xFFB2754E)
-private val Graphite   = Color(0xFF2D2A26)
-private val Mint       = Color(0xFF7DB686)
-private val CardWarm   = Color(0xFFE4A673)
+private val Cocoa = Color(0xFFB2754E)
+private val Graphite = Color(0xFF2D2A26)
+private val Mint = Color(0xFF7DB686)
+private val CardWarm = Color(0xFFE4A673)
 private val TerracottaDark = Color(0xFFCF8A57)
 
 /* Fondo superior ondulado */
@@ -77,6 +77,9 @@ fun PantallaPerfilUI(
     onLogout: () -> Unit,
     onHome: () -> Unit
 ) {
+    // === Estado del diálogo de confirmación de salida ===
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
 
@@ -160,18 +163,26 @@ fun PantallaPerfilUI(
                         .background(CardWarm, RoundedCornerShape(16.dp))
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
-                    Text("Nombre: ${nombre.ifBlank { "(sin nombre)" }}",
+                    Text(
+                        "Nombre: ${nombre.ifBlank { "(sin nombre)" }}",
                         color = Color.White, fontFamily = MuseoModerno,
-                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
-                    Text("Correo: ${email.ifBlank { "(sin email)" }}",
+                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp
+                    )
+                    Text(
+                        "Correo: ${email.ifBlank { "(sin email)" }}",
                         color = Color.White, fontFamily = MuseoModerno,
-                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
-                    Text("Celular: ${celular.ifBlank { "(sin celular)" }}",
+                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp
+                    )
+                    Text(
+                        "Celular: ${celular.ifBlank { "(sin celular)" }}",
                         color = Color.White, fontFamily = MuseoModerno,
-                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
-                    Text("País: ${pais.ifBlank { "(sin país)" }}",
+                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp
+                    )
+                    Text(
+                        "País: ${pais.ifBlank { "(sin país)" }}",
                         color = Color.White, fontFamily = MuseoModerno,
-                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp)
+                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp
+                    )
 
                     Spacer(Modifier.height(0.dp))
                     Button(
@@ -211,7 +222,11 @@ fun PantallaPerfilUI(
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
-                            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.35f))
+                            )
                             Text(
                                 "Favoritos",
                                 color = Color.White,
@@ -240,7 +255,11 @@ fun PantallaPerfilUI(
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
-                            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.35f))
+                            )
                             Text(
                                 "Chats",
                                 color = Color.White,
@@ -255,8 +274,9 @@ fun PantallaPerfilUI(
 
                 Spacer(Modifier.height(14.dp))
 
+                // Botón que abre el diálogo de confirmación
                 Button(
-                    onClick = onLogout,
+                    onClick = { showLogoutDialog = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(46.dp),
@@ -295,6 +315,62 @@ fun PantallaPerfilUI(
                 }
 
                 Spacer(Modifier.width(72.dp))
+            }
+
+            // ===== Diálogo de confirmación de salida =====
+            if (showLogoutDialog) {
+                AlertDialog(
+                    onDismissRequest = { showLogoutDialog = false },
+                    title = {
+                        Text(
+                            "Cerrar sesión",
+                            color = Graphite,
+                            style = TextStyle(
+                                fontFamily = InriaSans,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 20.sp
+                            )
+                        )
+                    },
+                    text = {
+                        Text(
+                            "¿Estás seguro de que deseas salir de tu cuenta?",
+                            color = Cocoa,
+                            style = TextStyle(
+                                fontFamily = InriaSans,
+                                fontSize = 16.sp
+                            )
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showLogoutDialog = false
+                            onLogout()
+                        }) {
+                            Text(
+                                "Salir",
+                                color = Terracotta,
+                                fontSize = 18.sp,
+                                fontFamily = InriaSans
+                            )
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showLogoutDialog = false }) {
+                            Text(
+                                "Cancelar",
+                                color = Cocoa,
+                                fontSize = 18.sp,
+                                fontFamily = InriaSans
+                            )
+                        }
+                    },
+                    shape = RoundedCornerShape(18.dp),
+                    containerColor = Color(0xFFF2E7D3),
+                    iconContentColor = Graphite,
+                    titleContentColor = Graphite,
+                    textContentColor = Graphite
+                )
             }
         }
     }

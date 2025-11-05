@@ -15,12 +15,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
-// ✅ MODELO ÚNICO PARA LA UI (no hay que crearlo en otro lado)
 data class ChatMessageUIModel(
     val id: String,
     val text: String? = null,
     val imageUri: Uri? = null,            // imagen del usuario (Storage o content://)
-    val productImageUrl: String? = null,  // si quieres mostrar 1 imagen de producto
+    val productImageUrl: String? = null,  // mostrar 1 imagen de producto
     val isUser: Boolean
 )
 
