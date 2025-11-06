@@ -42,171 +42,199 @@ import com.decoraia.app.data.repo.RAProductsRepo
 // =====================
 // Dominio: estilos / accesorios
 // =====================
-enum class StyleDb(val dbValue: String) { MINIMALISTA("minimalista"), INDUSTRIAL("industrial"), MEDITERRANEO("mediterraneo"), CLASICO("clasico") }
-enum class AccessoryDb(val dbValue: String) { JARRON("jarron"), CUADRO("cuadro"), LAMPARA("lampara"), SOFA("sofa") }
-private val ALL_STYLES_ORDERED = listOf(StyleDb.MEDITERRANEO, StyleDb.MINIMALISTA, StyleDb.INDUSTRIAL, StyleDb.CLASICO)
+enum class StyleDb(val dbValue: String) {
+    MINIMALISTA("minimalista"),
+    INDUSTRIAL("industrial"),
+    MEDITERRANEO("mediterraneo"),
+    CLASICO("clasico")
+}
+
+enum class AccessoryDb(val dbValue: String) {
+    JARRON("jarron"),
+    CUADRO("cuadro"),
+    LAMPARA("lampara"),
+    SOFA("sofa")
+}
+
+// Orden base para fallback multi-estilo (mismo accesorio)
+private val ALL_STYLES_ORDERED = listOf(
+    StyleDb.MEDITERRANEO, StyleDb.MINIMALISTA, StyleDb.INDUSTRIAL, StyleDb.CLASICO
+)
 
 // =====================
-// Constantes / Logs / Mensajes
+// Sinónimos (UI + Chat)
 // =====================
-private const val TAG = "PantallaChatIA"
-private const val NO_RESULTS_MSG =
-    "No encontré imágenes con ese criterio. Prueba así: ‘minimalista lámpara’, ‘industrial sofá’ o dime ‘ver cuadros mediterráneos’."
-
-// =====================
-// Sinónimos
-// =====================
-private val STYLE_SYNONYMS = mapOf(
+private val STYLE_SYNONYMS: Map<String, StyleDb> = mapOf(
     "minimalista" to StyleDb.MINIMALISTA, "minimal" to StyleDb.MINIMALISTA,
-    "industrial" to StyleDb.INDUSTRIAL,
+    "industrial"   to StyleDb.INDUSTRIAL,
     "mediterraneo" to StyleDb.MEDITERRANEO, "mediterráneo" to StyleDb.MEDITERRANEO, "mediter" to StyleDb.MEDITERRANEO,
-    "clasico" to StyleDb.CLASICO, "clásico" to StyleDb.CLASICO
-)
-private val ACCESSORY_SYNONYMS = mapOf(
-    "jarron" to AccessoryDb.JARRON, "jarrón" to AccessoryDb.JARRON, "jarrones" to AccessoryDb.JARRON,
-    "florero" to AccessoryDb.JARRON, "floreros" to AccessoryDb.JARRON, "vase" to AccessoryDb.JARRON, "vases" to AccessoryDb.JARRON,
-    "cuadro" to AccessoryDb.CUADRO, "cuadros" to AccessoryDb.CUADRO, "lámina" to AccessoryDb.CUADRO, "lamina" to AccessoryDb.CUADRO, "arte" to AccessoryDb.CUADRO, "art" to AccessoryDb.CUADRO, "painting" to AccessoryDb.CUADRO,
-    "lampara" to AccessoryDb.LAMPARA, "lámpara" to AccessoryDb.LAMPARA, "lamparas" to AccessoryDb.LAMPARA, "lámparas" to AccessoryDb.LAMPARA, "luminaria" to AccessoryDb.LAMPARA, "iluminacion" to AccessoryDb.LAMPARA, "lighting" to AccessoryDb.LAMPARA, "pendant" to AccessoryDb.LAMPARA,
-    "sofa" to AccessoryDb.SOFA, "sofá" to AccessoryDb.SOFA, "sofas" to AccessoryDb.SOFA, "sofás" to AccessoryDb.SOFA, "sillon" to AccessoryDb.SOFA, "sillón" to AccessoryDb.SOFA
+    "clasico"      to StyleDb.CLASICO, "clásico" to StyleDb.CLASICO
 )
 
+private val ACCESSORY_SYNONYMS: Map<String, AccessoryDb> = mapOf(
+    "jarron" to AccessoryDb.JARRON, "jarrón" to AccessoryDb.JARRON, "florero" to AccessoryDb.JARRON, "vase" to AccessoryDb.JARRON,
+    "cuadro" to AccessoryDb.CUADRO, "cuadros" to AccessoryDb.CUADRO, "lámina" to AccessoryDb.CUADRO, "lamina" to AccessoryDb.CUADRO,
+    "lampara" to AccessoryDb.LAMPARA, "lámpara" to AccessoryDb.LAMPARA, "luminaria" to AccessoryDb.LAMPARA, "colgante" to AccessoryDb.LAMPARA, "pendant" to AccessoryDb.LAMPARA,
+    "sofa" to AccessoryDb.SOFA, "sofá" to AccessoryDb.SOFA, "sofas" to AccessoryDb.SOFA, "sofás" to AccessoryDb.SOFA
+)
+
+// =====================
+// Parsers + Wrappers
+// =====================
 private fun parseStyle(text: String): StyleDb? {
     val t = text.lowercase()
-    return STYLE_SYNONYMS.entries.firstOrNull { (k, _) ->
-        Regex("""(^|[\s,.;:!¡¿?\-/])${Regex.escape(k)}($|[\s,.;:!¡¿?\-/])""").containsMatchIn(t)
-    }?.value
+    return STYLE_SYNONYMS.entries.firstOrNull { (k, _) -> k in t }?.value
 }
-
 private fun parseAccessory(text: String): AccessoryDb? {
     val t = text.lowercase()
-    return ACCESSORY_SYNONYMS.entries.firstOrNull { (k, _) ->
-        Regex("""(^|[\s,.;:!¡¿?\-/])${Regex.escape(k)}($|[\s,.;:!¡¿?\-/])""").containsMatchIn(t)
-    }?.value
+    return ACCESSORY_SYNONYMS.entries.firstOrNull { (k, _) -> k in t }?.value
 }
 
-// Intención de catálogo/imagenes.
-// Dispara si hay verbos típicos (más estrictos) O si el usuario menciona un accesorio.
+// Compat con repos existentes
+private fun guessStyleToDb(text: String): String = parseStyle(text)?.dbValue ?: StyleDb.MEDITERRANEO.dbValue
+private fun guessTypeToDb(text: String): String = parseAccessory(text)?.dbValue ?: AccessoryDb.LAMPARA.dbValue
+
+// Intención para mostrar catálogo/imagenes
 private fun shouldShowCatalogIntent(text: String): Boolean {
     val t = text.lowercase()
-    val strongTriggers = listOf(
-        "muestra", "muéstrame", "muestrame",
-        "enséñame", "ensename",
-        "suger", "recom", "ideas", "opciones",
-        "catálogo", "catalogo", "quiero ver", "ver ",
-        "busco", "buscar ",
-        "imagen", "imágen", "foto", "fotos",
-        "catálogo de", "catalogo de"
+    val triggers = listOf(
+        "muestra","muéstrame","agrada","muestrame",
+        "enséñame","ensename","enséñ","ensena",
+        "suger","recom","ideas","opciones",
+        "catálogo","catalogo","quiero ver","quiero comprar",
+        "ver lámpara","ver lampara","busco",
+        "dame","envíame","enviame","ponme","tráeme","traeme",
+        "imagen","imgen","foto","link","url"
     )
-    val hasVerbTrigger = strongTriggers.any { it in t }
-    val mentionsAccessory = parseAccessory(t) != null
-    return hasVerbTrigger || mentionsAccessory
-}
-
-private fun isSimilarRequest(text: String): Boolean {
-    val t = text.lowercase()
-    val keys = listOf("similar","parecid","como esa","como ese","como la","como el","otro de esos","ver algo parecido","algo parecido")
-    return keys.any { it in t }
-}
-
-private fun isGreetingOrSmalltalk(text: String): Boolean {
-    val t = text.trim().lowercase()
-    if (t.isBlank()) return true
-    val greet = listOf("hola","holi","buenas","buenos dias","buenos días","buenas tardes","buenas noches","que tal","qué tal")
-    return greet.any { t.startsWith(it) } && parseAccessory(t) == null && parseStyle(t) == null && !shouldShowCatalogIntent(t)
+    return triggers.any { it in t }
 }
 
 // =====================
-// Candidatos de tipo para Firestore
-// =====================
-private fun typeCandidates(a: AccessoryDb) = when (a) {
-    AccessoryDb.CUADRO -> listOf("cuadro","cuadros","arte","art","painting")
-    AccessoryDb.LAMPARA -> listOf("lampara","lámpara","lamparas","lámparas","luminaria","iluminacion","lighting","pendant")
-    AccessoryDb.SOFA -> listOf("sofa","sofá","sofas","sofás","sillon","sillón")
-    AccessoryDb.JARRON -> listOf("jarron","jarrón","jarrones","florero","floreros","vase","vases")
-}
-
-// =====================
-// Modelo de mensaje
+// Helpers de opciones (chat)
 // =====================
 data class MensajeIA(
     val id: Long = System.nanoTime(),
     val texto: String,
     val esUsuario: Boolean,
-    val imageUri: Uri? = null,
+    val imageUri: Uri? = null,           // content:// o https:// (turno usuario o imagen subida)
     val bitmap: Bitmap? = null,
-    val productImageUrl: String? = null
+    val productImageUrl: String? = null  // imágenes del asistente (render preferido)
 )
 
-// =====================
-// Helpers selección
-// =====================
+private data class OpcionesExtraidas(val items: List<String>)
+
+private fun extraerOpcionesDelUltimoAsistente(historial: List<MensajeIA>): OpcionesExtraidas? {
+    val ultimoAsistente = historial.lastOrNull { !it.esUsuario }?.texto ?: return null
+    val opciones = mutableListOf<String>()
+    val regex = Regex("""^\s*(\d+)[\)\.\-:]\s*(.+)$""")
+    ultimoAsistente.lines().forEach { line ->
+        val m = regex.find(line.trim())
+        if (m != null) {
+            val texto = m.groupValues[2].trim()
+            if (texto.isNotBlank()) opciones += texto
+        }
+    }
+    return if (opciones.isNotEmpty()) OpcionesExtraidas(opciones) else null
+}
+
 private fun detectarIndiceElegido(userText: String, total: Int): Int? {
-    if (total <= 0) return null
     val t = userText.lowercase()
-    Regex("""\b(\d{1,2})\b""").find(t)?.groupValues?.get(1)?.toIntOrNull()?.let { n -> if (n in 1..total) return n - 1 }
-    val mapa = mapOf("primera" to 0,"1ra" to 0,"1era" to 0,"segunda" to 1,"2da" to 1,"tercera" to 2,"3ra" to 2,"cuarta" to 3,"4ta" to 3,"quinta" to 4,"5ta" to 4)
-    for ((k,v) in mapa) if (t.contains(k) && v < total) return v
-    Regex("""opci[oó]n\s+(\d{1,2})""").find(t)?.groupValues?.get(1)?.toIntOrNull()?.let { n -> if (n in 1..total) return n - 1 }
+    Regex("""\b(\d{1,2})\b""").find(t)?.let { m ->
+        val n = m.groupValues[1].toIntOrNull()
+        if (n != null && n in 1..total) return n - 1
+    }
+    val mapa = mapOf("primera" to 0, "1ra" to 0, "1era" to 0, "segunda" to 1, "2da" to 1, "tercera" to 2, "3ra" to 2, "cuarta" to 3, "4ta" to 3)
+    for ((k, v) in mapa) if (t.contains(k) && v < total) return v
+    Regex("""opci[oó]n\s+(\d{1,2})""").find(t)?.let { m ->
+        val n = m.groupValues[1].toIntOrNull()
+        if (n != null && n in 1..total) return n - 1
+    }
     return null
 }
 
 private fun buildContextualPrompt(historial: List<MensajeIA>, userText: String): String {
     val slice = historial.takeLast(12)
-    return buildString {
-        appendLine("Eres un asesor de decoración. No repitas saludos ni presentaciones. Continúa la conversación según el contexto y avanza sin reexplicar lo anterior.")
-        appendLine("\nContexto reciente:")
-        slice.forEach { m -> if (m.texto.isNotBlank()) appendLine("- ${if (m.esUsuario) "Usuario" else "Asistente"}: ${m.texto.take(400)}") }
-        appendLine("\nUsuario ahora dice: $userText")
-        appendLine("\nResponde breve y accionable, siguiendo esa intención.")
+    val sb = StringBuilder()
+    sb.appendLine(
+        """
+        Eres un asesor de decoración. NO repitas saludos ni presentaciones. 
+        Continúa la conversación según el contexto y avanza sin reexplicar lo anterior.
+        """.trimIndent()
+    )
+    sb.appendLine("\nContexto reciente:")
+    slice.forEach { m ->
+        val who = if (m.esUsuario) "Usuario" else "Asistente"
+        if (m.texto.isNotBlank()) sb.appendLine("- $who: ${m.texto.take(400)}")
     }
+    sb.appendLine("\nUsuario ahora dice: $userText")
+    sb.appendLine("\nResponde breve y accionable, siguiendo esa intención.")
+    return sb.toString()
 }
 
 // =====================
-// Utilidad catálogo (devuelve urls y el estilo usado)
+// Utilidad de catálogo (SIEMPRE mismo accesorio)
 // =====================
-private suspend fun queryUrlsWithTypeCandidates(
-    style: StyleDb?, accessory: AccessoryDb, maxItems: Int
-): Pair<List<String>, StyleDb?> {
-    val cand = typeCandidates(accessory)
-
-    if (style != null) {
-        for (t in cand) {
-            val p = RAProductsRepo.loadProductos(style.dbValue, t)
-            if (p.isNotEmpty()) {
-                val urls = p.asSequence().mapNotNull { it.imageUrl }.filter { it.startsWith("http") }.take(maxItems).toList()
-                Log.d(TAG, "queryUrlsWithTypeCandidates(preferred): urls=${urls.size}, stylePreferida=${style.dbValue}, type=$t")
-                return urls to style
-            }
-        }
-    }
-    for (s in ALL_STYLES_ORDERED) {
-        for (t in cand) {
-            val p = RAProductsRepo.loadProductos(s.dbValue, t)
-            if (p.isNotEmpty()) {
-                val urls = p.asSequence().mapNotNull { it.imageUrl }.filter { it.startsWith("http") }.take(maxItems).toList()
-                Log.d(TAG, "queryUrlsWithTypeCandidates(fallback): urls=${urls.size}, usado=${s.dbValue}, type=$t")
-                return urls to s
-            }
-        }
-    }
-    Log.d(TAG, "queryUrlsWithTypeCandidates: sin resultados para accessory=${accessory.dbValue}")
-    return emptyList<String>() to null
+// Función para cargar más imágenes
+private suspend fun cargarMasProductosPorCategoria(
+    style: StyleDb,
+    accessory: AccessoryDb,
+    maxItems: Int = 8,
+    yaMostradas: Set<String>
+): List<String> {
+    val productos = RAProductsRepo.loadProductos(style.dbValue, accessory.dbValue)
+    return productos.asSequence()
+        .mapNotNull { it.imageUrl }
+        .filter { it.startsWith("http") && it !in yaMostradas }
+        .take(maxItems)
+        .toList()
 }
 
-suspend fun cargarProductosPorCategoria(style: StyleDb, accessory: AccessoryDb, maxItems: Int = 8): List<String> {
-    var (urls, _) = queryUrlsWithTypeCandidates(style, accessory, maxItems)
-    if (urls.isEmpty() && accessory != AccessoryDb.LAMPARA) {
-        urls = queryUrlsWithTypeCandidates(style, AccessoryDb.LAMPARA, maxItems).first
-        if (urls.isEmpty()) urls = queryUrlsWithTypeCandidates(null, AccessoryDb.LAMPARA, maxItems).first
+// En tu código principal, cuando el usuario pide más opciones
+suspend fun cargarMasOpciones(
+    styleUiText: String,
+    accessoryUiText: String,
+    yaMostradas: Set<String>,   // El conjunto de URLs ya mostradas
+    onResult: (List<String>) -> Unit,
+    onError: (String) -> Unit
+) {
+    val style = parseStyle(styleUiText) ?: return onError("Estilo no reconocido")
+    val acc = parseAccessory(accessoryUiText) ?: return onError("Accesorio no reconocido")
+
+    try {
+        // Llamamos a la función que carga más productos
+        val urls = cargarMasProductosPorCategoria(style, acc, maxItems = 8, yaMostradas)
+        onResult(urls) // Pasamos las URLs obtenidas al callback
+    } catch (e: Exception) {
+        onError("No fue posible cargar productos: ${e.message}")
     }
-    return urls
 }
 
+// Handler para taps externos (si lo usas en otra pantalla)
+suspend fun onCategoriaSeleccionada(
+    styleUiText: String,
+    accessoryUiText: String,
+    onResult: (List<String>) -> Unit,
+    onError: (String) -> Unit
+) {
+    val style = parseStyle(styleUiText) ?: return onError("Estilo no reconocido")
+    val acc   = parseAccessory(accessoryUiText) ?: return onError("Accesorio no reconocido")
+
+    try {
+        // SOLUCIÓN: Pasamos emptySet()
+        val urls = cargarMasProductosPorCategoria(style, acc, maxItems = 8, yaMostradas = emptySet())
+        onResult(urls)
+    } catch (e: Exception) {
+        onError("No fue posible cargar productos: ${e.message}")
+    }
+}
 // =====================
-// Composable Chat
+// Pantalla de Chat
 // =====================
 @Composable
-fun PantallaChatIA(navController: NavController? = null, chatId: String? = null) {
+fun PantallaChatIA(
+    navController: NavController? = null,
+    chatId: String? = null
+) {
     val db = FirebaseFirestore.getInstance()
     val auth = FirebaseAuth.getInstance()
     val scope = rememberCoroutineScope()
@@ -214,12 +242,6 @@ fun PantallaChatIA(navController: NavController? = null, chatId: String? = null)
     val listState = rememberLazyListState()
 
     val listaMensajes = remember { mutableStateListOf<MensajeIA>() }
-    val ultimoCatalogo = remember { mutableStateListOf<String>() }
-
-    // NUEVO: memoria del último estilo/objeto usado para “similar”
-    val lastStyleUsed = remember { mutableStateOf<StyleDb?>(null) }
-    val lastAccessoryUsed = remember { mutableStateOf<AccessoryDb?>(null) }
-
     var prompt by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
     var selectedImage by remember { mutableStateOf<Uri?>(null) }
@@ -229,56 +251,73 @@ fun PantallaChatIA(navController: NavController? = null, chatId: String? = null)
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
 
-    val pickFromGallery = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri -> if (uri != null) { selectedImage = uri; selectedBitmap = null } }
-    val takePhoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bmp -> if (bmp != null) { selectedBitmap = bmp; selectedImage = null } else scope.launch { snackbarHostState.showSnackbar("No se pudo tomar la foto") } }
-    val requestCameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> if (granted) takePhoto.launch() else scope.launch { snackbarHostState.showSnackbar("Permiso de cámara denegado") } }
+    // Pickers
+    val pickFromGallery = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) { selectedImage = uri; selectedBitmap = null }
+    }
+    val takePhoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bmp ->
+        if (bmp != null) { selectedBitmap = bmp; selectedImage = null }
+        else scope.launch { snackbarHostState.showSnackbar("No se pudo tomar la foto") }
+    }
+    val requestCameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) takePhoto.launch() else scope.launch { snackbarHostState.showSnackbar("Permiso de cámara denegado") }
+    }
 
     var sessionId by remember { mutableStateOf<String?>(null) }
     var pusoTitulo by remember { mutableStateOf(false) }
 
-    // Cargar historial (sin duplicados)
+    // Cargar historial
     LaunchedEffect(chatId) {
-        val uid = auth.currentUser?.uid ?: run { snackbarHostState.showSnackbar("Debes iniciar sesión para chatear"); return@LaunchedEffect }
+        val uid = auth.currentUser?.uid ?: run {
+            snackbarHostState.showSnackbar("Debes iniciar sesión para chatear"); return@LaunchedEffect
+        }
         if (chatId != null) {
             sessionId = chatId
             try {
-                val qs = db.collection("sessions").document(chatId).collection("messages").orderBy("createdAt", Query.Direction.ASCENDING).get().await()
+                val qs = db.collection("sessions").document(chatId)
+                    .collection("messages")
+                    .orderBy("createdAt", Query.Direction.ASCENDING)
+                    .get().await()
+
                 listaMensajes.clear()
-                val seen = mutableSetOf<String>()
-                for (d in qs.documents) {
+                val historial = qs.documents.map { d ->
                     val role = d.getString("role").orEmpty()
                     val text = d.getString("text").orEmpty()
-                    val userImageUrl = d.getString("imageUrl")
-                    val catalogImageUrl = d.getString("productImageUrl")
-                    val createdId = d.getTimestamp("createdAt")?.toDate()?.time ?: System.nanoTime()
-                    when {
-                        role == "assistant" && !catalogImageUrl.isNullOrBlank() && seen.add(catalogImageUrl) ->
-                            listaMensajes.add(MensajeIA(createdId, "", false, null, null, catalogImageUrl))
-                        role == "assistant" && text.isNotBlank() ->
-                            listaMensajes.add(MensajeIA(createdId, text, false))
-                        role == "user" ->
-                            listaMensajes.add(MensajeIA(createdId, text, true, userImageUrl?.toUri()))
-                    }
+                    val userUploadedImageUrl = d.getString("imageUrl") // Renombrado para claridad
+                    val productUrl = d.getString("productImageUrl")
+                    MensajeIA(
+                        id = d.getTimestamp("createdAt")?.toDate()?.time ?: System.nanoTime(),
+                        texto = text,
+                        esUsuario = (role == "user"),
+                        // CAMBIO CLAVE: Asignar userUploadedImageUrl a imageUri.
+                        // Solo debe ser la imagen del usuario, no el producto del asistente.
+                        imageUri = userUploadedImageUrl?.toUri(),
+                        bitmap = null, // Ya no es necesario el bitmap si se carga de Firestore
+                        productImageUrl = productUrl
+                    )
                 }
-                // reconstruir último bloque para “me gusta la X”
-                ultimoCatalogo.clear()
-                val lastUrls = mutableListOf<String>()
-                var started = false
-                for (i in listaMensajes.indices.reversed()) {
-                    val m = listaMensajes[i]
-                    if (!m.esUsuario && m.productImageUrl != null) { started = true; lastUrls.add(0, m.productImageUrl) }
-                    else if (started) break
-                }
-                ultimoCatalogo.addAll(lastUrls)
+                listaMensajes.addAll(historial)
             } catch (e: Exception) {
                 scope.launch { snackbarHostState.showSnackbar("Error cargando mensajes: ${e.message}") }
             }
         }
     }
 
-    LaunchedEffect(listaMensajes.size) { if (listaMensajes.isNotEmpty()) listState.animateScrollToItem(listaMensajes.size - 1) }
+    // Scroll auto
+    LaunchedEffect(listaMensajes.size) {
+        if (listaMensajes.isNotEmpty()) listState.animateScrollToItem(listaMensajes.size - 1)
+    }
 
-    val uiMessages = listaMensajes.map { ChatMessageUIModel(it.id.toString(), it.texto, it.imageUri, it.productImageUrl, it.esUsuario) }
+    // Mapear a la UI
+    val uiMessages: List<ChatMessageUIModel> = listaMensajes.map { m ->
+        ChatMessageUIModel(
+            id = m.id.toString(),
+            text = m.texto,
+            imageUri = m.imageUri,
+            productImageUrl = m.productImageUrl,
+            isUser = m.esUsuario
+        )
+    }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
@@ -295,18 +334,38 @@ fun PantallaChatIA(navController: NavController? = null, chatId: String? = null)
                 onRemoveAttachment = { selectedImage = null; selectedBitmap = null },
                 onSend = {
                     scope.launch {
-                        if (loading) return@launch
-                        val uid = auth.currentUser?.uid ?: run { snackbarHostState.showSnackbar("Debes iniciar sesión para chatear"); return@launch }
+                        if (loading) return@launch // evita dobles taps
+                        val uid = auth.currentUser?.uid ?: run {
+                            snackbarHostState.showSnackbar("Debes iniciar sesión para chatear"); return@launch
+                        }
                         val sid = sessionId ?: run {
-                            val ref = db.collection("sessions").add(mapOf("ownerId" to uid,"title" to "Nueva conversación","createdAt" to Timestamp.now(),"lastMessageAt" to Timestamp.now(),"active" to true)).await().id
+                            val ref = db.collection("sessions").add(
+                                mapOf(
+                                    "ownerId" to uid,
+                                    "title" to "Nueva conversación",
+                                    "createdAt" to Timestamp.now(),
+                                    "lastMessageAt" to Timestamp.now(),
+                                    "active" to true
+                                )
+                            ).await().id
                             sessionId = ref; ref
                         }
+
                         enviarMensajeConGemini(
-                            context, db, sid, prompt, selectedImage, selectedBitmap,
-                            listaMensajes, ultimoCatalogo, lastStyleUsed, lastAccessoryUsed,
-                            focus,
+                            context = context,
+                            db = db,
+                            sessionId = sid,
+                            prompt = prompt,
+                            imageUri = selectedImage,
+                            bitmap = selectedBitmap,
+                            listaMensajes = listaMensajes,
+                            focus = focus,
                             onStart = { loading = true; prompt = "" },
-                            onDone = { loading = false; selectedImage = null; selectedBitmap = null },
+                            onDone = {
+                                loading = false
+                                selectedImage = null
+                                selectedBitmap = null
+                            },
                             onError = { msg -> scope.launch { snackbarHostState.showSnackbar(msg) } },
                             setTitleIfNeeded = { firstText ->
                                 if (!pusoTitulo && firstText.isNotBlank()) {
@@ -339,7 +398,7 @@ suspend fun uploadImageToStorage(sessionId: String, imageUri: Uri, context: Cont
             imageRef.downloadUrl.await().toString()
         }
     } catch (e: Exception) {
-        Log.e(TAG, "Error al subir la imagen", e); null
+        Log.e("PantallaChatIA", "Error al subir la imagen", e); null
     }
 }
 
@@ -352,7 +411,7 @@ suspend fun uploadBitmapToStorage(sessionId: String, bitmap: Bitmap, context: Co
 }
 
 // =====================
-// Flujo principal
+// Flujo principal (Chat)
 // =====================
 private fun enviarMensajeConGemini(
     context: Context,
@@ -362,9 +421,6 @@ private fun enviarMensajeConGemini(
     imageUri: Uri?,
     bitmap: Bitmap?,
     listaMensajes: MutableList<MensajeIA>,
-    ultimoCatalogoMostrado: MutableList<String>,
-    lastStyleUsed: MutableState<StyleDb?>,
-    lastAccessoryUsed: MutableState<AccessoryDb?>,
     focus: FocusManager,
     onStart: () -> Unit,
     onDone: () -> Unit,
@@ -377,175 +433,185 @@ private fun enviarMensajeConGemini(
     focus.clearFocus()
     onStart()
 
-    val userMessage = MensajeIA(id = System.nanoTime(), texto = textoPlano, esUsuario = true, imageUri = imageUri, bitmap = bitmap)
+    val userMessage = MensajeIA(
+        id = System.nanoTime(),
+        texto = textoPlano,
+        esUsuario = true,
+        imageUri = imageUri,
+        bitmap = bitmap
+    )
     listaMensajes.add(userMessage)
 
     CoroutineScope(Dispatchers.IO).launch {
         val sessionRef = db.collection("sessions").document(sessionId)
         try {
-            Log.d(TAG, "Entrada usuario='${textoPlano}', intentCatalogo=${shouldShowCatalogIntent(textoPlano)}, acc=${parseAccessory(textoPlano)}, style=${parseStyle(textoPlano)}")
-
+            // Subir imagen si hay
             val imageUrl: String? = when {
                 imageUri != null -> uploadImageToStorage(sessionId, imageUri, context)
-                bitmap != null -> uploadBitmapToStorage(sessionId, bitmap, context)
-                else -> null
+                bitmap != null   -> uploadBitmapToStorage(sessionId, bitmap, context)
+                else             -> null
             }
+
             withContext(Dispatchers.Main) {
                 val pos = listaMensajes.indexOf(userMessage)
                 if (pos != -1 && imageUrl != null) {
-                    listaMensajes[pos] = listaMensajes[pos].copy(imageUri = imageUrl.toUri(), bitmap = null, id = System.nanoTime())
+                    listaMensajes[pos] = listaMensajes[pos].copy(
+                        imageUri = imageUrl.toUri(),
+                        bitmap = null,
+                        id = System.nanoTime()
+                    )
                 }
             }
-            val userMap = mutableMapOf<String, Any>("role" to "user", "text" to textoPlano, "createdAt" to Timestamp.now())
+
+            // Persistir turno usuario
+            val userMap = mutableMapOf<String, Any>(
+                "role" to "user",
+                "text" to textoPlano,
+                "createdAt" to Timestamp.now()
+            )
             if (imageUrl != null) userMap["imageUrl"] = imageUrl
             sessionRef.collection("messages").add(userMap).await()
             sessionRef.update("lastMessageAt", Timestamp.now()).await()
+
             setTitleIfNeeded(textoPlano.ifBlank { "Imagen" })
 
-            // Selección "opción N"
-            run {
-                detectarIndiceElegido(textoPlano, ultimoCatalogoMostrado.size)?.let { idx ->
-                    val r = "¡Perfecto! Te gustó la opción ${idx + 1}. ¿Quieres ver similares, quieres seguir con otro estilo?"
-                    withContext(Dispatchers.Main) { listaMensajes.add(MensajeIA(System.nanoTime(), r, false)); onDone() }
-                    sessionRef.collection("messages").add(mapOf("role" to "assistant","text" to r,"createdAt" to Timestamp.now())).await()
-                    sessionRef.update("lastMessageAt", Timestamp.now()).await()
-                    return@launch
+            // ===== CONTEXTO / Elección de opciones =====
+            val opciones = extraerOpcionesDelUltimoAsistente(listaMensajes)
+            val userTextForModel = opciones?.let {
+                detectarIndiceElegido(textoPlano, it.items.size)?.let { idx ->
+                    "El usuario eligió la opción ${idx + 1}: ${it.items[idx]}"
                 }
-                val num = Regex("""\b(\d{1,2})\b""").find(textoPlano)?.groupValues?.get(1)?.toIntOrNull()
-                if (num != null) {
-                    val r = "¡Hecho! Tomo nota de la opción $num. ¿Te muestro alternativas similares o prefieres otro estilo/objeto?"
-                    withContext(Dispatchers.Main) { listaMensajes.add(MensajeIA(System.nanoTime(), r, false)); onDone() }
-                    sessionRef.collection("messages").add(mapOf("role" to "assistant","text" to r,"createdAt" to Timestamp.now())).await()
-                    sessionRef.update("lastMessageAt", Timestamp.now()).await()
-                    return@launch
-                }
-            }
+            } ?: textoPlano
 
-            // SALUDO
-            if (isGreetingOrSmalltalk(textoPlano)) {
-                val saludo = "¡Hola! Soy tu asistente de decoración. Dime el estilo (mediterráneo, minimalista, industrial o clásico) y el objeto (jarrones, cuadros, lámparas o sofás) y te muestro opciones."
-                withContext(Dispatchers.Main) { listaMensajes.add(MensajeIA(System.nanoTime(), saludo, false)); onDone() }
-                sessionRef.collection("messages").add(mapOf("role" to "assistant","text" to saludo,"createdAt" to Timestamp.now())).await()
-                sessionRef.update("lastMessageAt", Timestamp.now()).await()
-                return@launch
-            }
+            val contextualPrompt = buildContextualPrompt(listaMensajes, userTextForModel)
 
-            // PETICIÓN DE "SIMILAR"
-            if (isSimilarRequest(textoPlano)) {
-                val acc = parseAccessory(textoPlano) ?: lastAccessoryUsed.value
-                val sty = parseStyle(textoPlano) ?: lastStyleUsed.value
-                if (acc == null && sty == null) {
-                    val txt = "¿De qué objeto quieres ver algo similar (sofá, lámpara, cuadro, jarrón) y en qué estilo (minimalista, industrial, mediterráneo, clásico)?"
-                    withContext(Dispatchers.Main) { listaMensajes.add(MensajeIA(System.nanoTime(), txt, false)); onDone() }
-                    sessionRef.collection("messages").add(mapOf("role" to "assistant","text" to txt,"createdAt" to Timestamp.now())).await()
-                    sessionRef.update("lastMessageAt", Timestamp.now()).await()
-                    return@launch
-                }
-                val accUse = acc ?: AccessoryDb.LAMPARA
-                val target = 3
-                val (urls, usedStyle) = queryUrlsWithTypeCandidates(sty, accUse, target)
-                val finalUrls = if (urls.isNotEmpty()) urls else queryUrlsWithTypeCandidates(null, accUse, target).first
-                withContext(Dispatchers.Main) {
-                    ultimoCatalogoMostrado.clear()
-                    ultimoCatalogoMostrado.addAll(finalUrls)
-                    if (finalUrls.isEmpty()) {
-                        listaMensajes.add(MensajeIA(System.nanoTime(), NO_RESULTS_MSG, false))
-                    } else {
-                        finalUrls.forEach { u -> listaMensajes.add(MensajeIA(System.nanoTime(), "", false, null, null, u)) }
-                        lastAccessoryUsed.value = accUse
-                        lastStyleUsed.value = usedStyle ?: lastStyleUsed.value
-                    }
-                    onDone()
-                }
-                if (finalUrls.isEmpty()) {
-                    sessionRef.collection("messages").add(mapOf("role" to "assistant","text" to NO_RESULTS_MSG,"createdAt" to Timestamp.now())).await()
-                } else {
-                    finalUrls.forEach { u -> sessionRef.collection("messages").add(mapOf("role" to "assistant","productImageUrl" to u,"createdAt" to Timestamp.now())).await() }
-                }
-                sessionRef.update("lastMessageAt", Timestamp.now()).await()
-                return@launch
-            }
+            // ===== Llamar a Gemini con contexto =====
+            val (respuesta, _) = GeminiService.askGeminiSuspend(
+                prompt = contextualPrompt,
+                imageUri = imageUri,
+                bitmap = bitmap,
+                context = context
+            )
 
-            // MODELO
-            val contextualPrompt = buildContextualPrompt(listaMensajes, textoPlano)
-            val (respuesta, _) = GeminiService.askGeminiSuspend(prompt = contextualPrompt, imageUri = imageUri, bitmap = bitmap, context = context)
-
-            // URLs del modelo + texto limpio
+            // 1) URLs que diga el modelo
             val urlRegex = Regex("""https?://\S+?\.(?:jpg|jpeg|png|webp)(\?\S+)?""", RegexOption.IGNORE_CASE)
-            val modelUrls = urlRegex.findAll(respuesta).map { it.value }.toList()
-            val textoLimpio = respuesta.replace(urlRegex, "").replace(Regex("\n{3,}"), "\n\n").trim()
+            var modelUrls = urlRegex.findAll(respuesta).map { it.value }.toList()
+            var textoLimpio = respuesta.replace(urlRegex, "").replace(Regex("\n{3,}"), "\n\n").trim()
 
-            // Catálogo si el usuario pidió explícitamente ver opciones o mencionó un accesorio
-            var catalogUrls = emptyList<String>()
-            var usedStyleByCatalog: StyleDb? = null
-            if (modelUrls.isEmpty() && (shouldShowCatalogIntent(textoPlano) || parseAccessory(textoPlano) != null)) {
-                val requestedAcc = parseAccessory(textoPlano) ?: AccessoryDb.LAMPARA
-                val preferred = parseStyle(textoPlano)
-                val target = 3
-                val (u1, s1) = queryUrlsWithTypeCandidates(preferred, requestedAcc, target)
-                var urls = u1; usedStyleByCatalog = s1
-                if (urls.isEmpty() && requestedAcc != AccessoryDb.LAMPARA) {
-                    val (alt, s2) = queryUrlsWithTypeCandidates(preferred, AccessoryDb.LAMPARA, target)
-                    urls = if (alt.isNotEmpty()) alt else queryUrlsWithTypeCandidates(null, AccessoryDb.LAMPARA, target).first
-                    usedStyleByCatalog = s2 ?: usedStyleByCatalog
+            // 2) Catálogo del MISMO accesorio (multi-estilo) si no hubo URLs y el usuario pidió ver
+            var usedCatalog = false
+            val catalogUrls: MutableList<String> = mutableListOf()
+            var catalogFoundForRequestedType = false
+            val stylesUsed: MutableList<StyleDb> = mutableListOf()
+            //Aquí es donde realmente ocurre la conexión entre lo que pidió el usuario y las imágenes
+            if (modelUrls.isEmpty() && shouldShowCatalogIntent(textoPlano)) {
+                try {
+                    val acc = parseAccessory(textoPlano) ?: AccessoryDb.LAMPARA
+                    val preferred = parseStyle(textoPlano)
+                    val targetCount = 3
+
+                    suspend fun loadUrls(style: StyleDb, accessory: AccessoryDb, take: Int): List<String> {
+                        val productos = RAProductsRepo.loadProductos(style.dbValue, accessory.dbValue)
+                        if (productos.isEmpty()) return emptyList()
+                        catalogFoundForRequestedType = true
+                        return productos.asSequence()
+                            .mapNotNull { it.imageUrl }
+                            .filter { it.startsWith("http") }
+                            .take(take)
+                            .toList()
+                    }
+
+                    // 2.1 estilo preferido (si existe)
+                    if (preferred != null) {
+                        val urlsPref = loadUrls(preferred, acc, targetCount)
+                        if (urlsPref.isNotEmpty()) {
+                            catalogUrls.addAll(urlsPref)
+                            stylesUsed.add(preferred)
+                        }
+                    }
+                    // 2.2 restantes estilos en orden fijo
+                    if (catalogUrls.size < targetCount) {
+                        val remaining = ALL_STYLES_ORDERED.filter { it != preferred }
+                        for (style in remaining) {
+                            val need = targetCount - catalogUrls.size
+                            if (need <= 0) break
+                            val u = loadUrls(style, acc, need)
+                            if (u.isNotEmpty()) {
+                                catalogUrls.addAll(u)
+                                stylesUsed.add(style)
+                            }
+                        }
+                    }
+                    usedCatalog = catalogUrls.isNotEmpty()
+                    Log.d("PantallaChatIA", "Catalog used=$usedCatalog acc=$acc preferred=${preferred?.dbValue} styles=${stylesUsed.map{it.dbValue}}")
+                } catch (e: Exception) {
+                    Log.e("PantallaChatIA", "Fallback catálogo falló: ${e.message}", e)
                 }
-                catalogUrls = urls
             }
 
-            // Elegir qué mostrar
-            var urls: List<String> = if (modelUrls.isNotEmpty()) modelUrls else catalogUrls
-
+            // 3) Elegir URLs finales y deduplicar (incluye ya mostradas)
+            var urls = if (modelUrls.isNotEmpty()) modelUrls else catalogUrls
             val yaMostradas = buildSet {
                 listaMensajes.mapNotNullTo(this) { it.productImageUrl?.trim() }
                 listaMensajes.mapNotNullTo(this) { it.imageUri?.toString()?.trim() }
             }
+
             urls = urls.map { it.trim() }.filter { it.isNotBlank() }.distinct().filter { it !in yaMostradas }
 
-            // NUEVO: si no hay URLs y el modelo dio texto útil, no fuerces catálogo
-            val textoModeloUtil = textoLimpio.length >= 20
-            if (urls.isEmpty() && (!shouldShowCatalogIntent(textoPlano) || textoModeloUtil)) {
-                Log.w(TAG, "FALLBACK texto: modelUrls=0, catalogUrls=${catalogUrls.size}, textoLimpio='${textoLimpio.take(80)}...'")
-                withContext(Dispatchers.Main) {
-                    listaMensajes.add(MensajeIA(System.nanoTime(), textoLimpio.ifBlank { NO_RESULTS_MSG }, false))
-                    onDone()
+            // 4) Ajustar texto coherente
+            if (usedCatalog && urls.isNotEmpty()) {
+                textoLimpio = if (catalogFoundForRequestedType) {
+                    "Aquí tienes algunas opciones según tu criterio. ¿Quieres ver más?"
+                } else {
+                    val estilosMsg = stylesUsed.joinToString { it.dbValue }
+                    "No encontré exactamente ese estilo, pero te muestro alternativas en otros estilos ($estilosMsg). ¿Te sirven?"
                 }
-                sessionRef.collection("messages").add(
-                    mapOf("role" to "assistant","text" to textoLimpio.ifBlank { NO_RESULTS_MSG },"createdAt" to Timestamp.now())
-                ).await()
-                sessionRef.update("lastMessageAt", Timestamp.now()).await()
-                return@launch
+            } else if (!usedCatalog && modelUrls.isEmpty()) {
+                if (textoLimpio.isBlank()) {
+                    val accPedido = parseAccessory(textoPlano)
+                    textoLimpio = when (accPedido) {
+                        AccessoryDb.SOFA   -> "No encontré sofás con ese criterio. ¿Probamos con otro estilo (mediterráneo, industrial o clásico)?"
+                        AccessoryDb.CUADRO -> "No encontré cuadros con ese criterio. ¿Probamos otro estilo o tamaño?"
+                        AccessoryDb.JARRON -> "No encontré jarrones con ese criterio. ¿Probamos otro estilo o material?"
+                        else               -> "Por ahora no encontré opciones para ese criterio. ¿Quieres que intentemos con otro estilo o accesorio?"
+                    }
+                }
             }
 
+            // 5) Render en UI
             withContext(Dispatchers.Main) {
-                // actualizar memoria para “similar” cuando hubo catálogo
-                if (urls.isNotEmpty() && shouldShowCatalogIntent(textoPlano)) {
-                    lastAccessoryUsed.value = parseAccessory(textoPlano) ?: lastAccessoryUsed.value ?: AccessoryDb.LAMPARA
-                    lastStyleUsed.value = parseStyle(textoPlano) ?: usedStyleByCatalog ?: lastStyleUsed.value
-                    ultimoCatalogoMostrado.clear()
-                    ultimoCatalogoMostrado.addAll(urls)
+                if (textoLimpio.isNotBlank()) {
+                    listaMensajes.add(MensajeIA(id = System.nanoTime(), texto = textoLimpio, esUsuario = false))
                 }
-
-                if (urls.isNotEmpty()) {
-                    urls.forEach { u -> listaMensajes.add(MensajeIA(System.nanoTime(), "", false, null, null, u)) }
-                } else {
-                    Log.w(TAG, "FALLBACK sin URLs ni texto útil: modelUrls=0, catalogUrls=${catalogUrls.size}")
-                    val texto = if (!shouldShowCatalogIntent(textoPlano) && textoLimpio.isNotBlank()) textoLimpio else NO_RESULTS_MSG
-                    listaMensajes.add(MensajeIA(System.nanoTime(), texto, false))
+                urls.forEach { u ->
+                    listaMensajes.add(
+                        MensajeIA(
+                            id = System.nanoTime(),
+                            texto = "",
+                            esUsuario = false,
+                            imageUri = null,          // evitar duplicado
+                            productImageUrl = u
+                        )
+                    )
                 }
                 onDone()
             }
 
-            // Persistencia
-            if (urls.isNotEmpty()) {
-                urls.forEach { u -> sessionRef.collection("messages").add(mapOf("role" to "assistant","productImageUrl" to u,"createdAt" to Timestamp.now())).await() }
-            } else {
-                val t = if (!shouldShowCatalogIntent(textoPlano) && textoLimpio.isNotBlank()) textoLimpio else NO_RESULTS_MSG
-                sessionRef.collection("messages").add(mapOf("role" to "assistant","text" to t,"createdAt" to Timestamp.now())).await()
+            // 6) Persistir en Firestore
+            if (textoLimpio.isNotBlank()) {
+                sessionRef.collection("messages").add(
+                    mapOf("role" to "assistant", "text" to textoLimpio, "createdAt" to Timestamp.now())
+                ).await()
+            }
+            urls.forEach { u ->
+                sessionRef.collection("messages").add(
+                    mapOf("role" to "assistant", "productImageUrl" to u, "createdAt" to Timestamp.now())
+                ).await()
             }
             sessionRef.update("lastMessageAt", Timestamp.now()).await()
 
         } catch (e: Exception) {
             withContext(Dispatchers.Main) { onDone(); onError("Error: ${e.message}") }
-            }
         }
+    }
 }
