@@ -17,7 +17,7 @@ import kotlinx.coroutines.withContext
 
 object GeminiService {
 
-    // ⚠️ En producción mueve esto a BuildConfig o Remote Config.
+    // ⚠ En producción mueve esto a BuildConfig o Remote Config.
     private const val API_KEY = "AIzaSyCmlDOgseFuFg5jdCqiydb158s2H3T7xlQ"
 
     private val generativeModel = GenerativeModel(

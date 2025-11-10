@@ -94,19 +94,39 @@ private fun parseAccessory(text: String): AccessoryDb? {
 private fun guessStyleToDb(text: String): String = parseStyle(text)?.dbValue ?: StyleDb.MEDITERRANEO.dbValue
 private fun guessTypeToDb(text: String): String = parseAccessory(text)?.dbValue ?: AccessoryDb.LAMPARA.dbValue
 
-// Intención para mostrar catálogo/imagenes
+// =====================
+// Normalización + intención (helpers)
+// =====================
+private fun normalizeForIntent(raw: String): String {
+    var t = raw.lowercase()
+    t = t.replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u').replace('ñ','n')
+    // typos comunes
+    t = t.replace(" en tex", " en texto")
+        .replace("texlo", "texto")
+        .replace("imgen", "imagen")
+    t = Regex("\\s+").replace(t, " ").trim()
+    return t
+}
+
+private val TEXT_ONLY_TRIGGERS = listOf(
+    "en texto", "solo texto", "sin imagen", "sin imagenes",
+    "sin fotos", "no muestres fotos", "no mostrar fotos",
+    "explicacion sin imagenes", "solo explicacion"
+)
+
+private val SHOW_IMAGE_TRIGGERS = listOf(
+    "muestrame", "muestra", "ensename", "enseñame", "ver", "ver opciones",
+    "ver imagenes", "ver fotos", "ideas", "opciones", "catalogo", "catálogo",
+    "busco", "fotos", "imagenes", "imagen", "dame", "enviame", "ponme", "traeme", "tráeme"
+)
+
+// Intención para mostrar catálogo/imagenes (corregida)
 private fun shouldShowCatalogIntent(text: String): Boolean {
-    val t = text.lowercase()
-    val triggers = listOf(
-        "muestra","muéstrame","agrada","muestrame",
-        "enséñame","ensename","enséñ","ensena",
-        "suger","recom","ideas","opciones",
-        "catálogo","catalogo","quiero ver","quiero comprar",
-        "ver lámpara","ver lampara","busco",
-        "dame","envíame","enviame","ponme","tráeme","traeme",
-        "imagen","imgen","foto","link","url"
-    )
-    return triggers.any { it in t }
+    val t = normalizeForIntent(text)
+    // prioridad: si pide explícitamente "texto", NO activar catálogo
+    if (TEXT_ONLY_TRIGGERS.any { it in t }) return false
+    // de lo contrario, activar si hay trigger visual
+    return SHOW_IMAGE_TRIGGERS.any { it in t }
 }
 
 // =====================
@@ -503,7 +523,7 @@ private fun enviarMensajeConGemini(
             val catalogUrls: MutableList<String> = mutableListOf()
             var catalogFoundForRequestedType = false
             val stylesUsed: MutableList<StyleDb> = mutableListOf()
-            //Aquí es donde realmente ocurre la conexión entre lo que pidió el usuario y las imágenes
+            // Aquí es donde realmente ocurre la conexión entre lo que pidió el usuario y las imágenes
             if (modelUrls.isEmpty() && shouldShowCatalogIntent(textoPlano)) {
                 try {
                     val acc = parseAccessory(textoPlano) ?: AccessoryDb.LAMPARA
@@ -549,7 +569,7 @@ private fun enviarMensajeConGemini(
                 }
             }
 
-            // 3) Elegir URLs finales y deduplicar (incluye ya mostradas)
+            // 3) Elegir URLs finales y deduplicar (incluye ya mostadas)
             var urls = if (modelUrls.isNotEmpty()) modelUrls else catalogUrls
             val yaMostradas = buildSet {
                 listaMensajes.mapNotNullTo(this) { it.productImageUrl?.trim() }
