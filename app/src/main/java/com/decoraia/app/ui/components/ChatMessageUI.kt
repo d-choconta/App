@@ -18,8 +18,9 @@ import coil.compose.AsyncImage
 data class ChatMessageUIModel(
     val id: String,
     val text: String? = null,
-    val imageUri: Uri? = null,            // imagen del usuario (Storage o content://)
-    val productImageUrl: String? = null,  // mostrar 1 imagen de producto
+    val imageUri: Uri? = null,
+    val productImageUrl: String? = null,
+    val productModelUrl: String? = null,
     val isUser: Boolean
 )
 

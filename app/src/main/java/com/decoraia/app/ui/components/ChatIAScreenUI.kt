@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -243,7 +244,8 @@ fun ChatIAScreenUI(
     onBack: () -> Unit,
     onHistory: () -> Unit,
     onHome: () -> Unit,
-    onProfile: () -> Unit
+    onProfile: () -> Unit,
+    onProductClick: (String?, String?) -> Unit //
 ) {
     Surface(color = Cream) {
         Column(Modifier.fillMaxSize()) {
@@ -258,7 +260,16 @@ fun ChatIAScreenUI(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(messages, key = { it.id }) { msg ->
-                    ChatMessageUI(message = msg)
+                    val clickable = msg.productModelUrl != null
+
+                    Box(
+                        modifier =
+                            if (clickable) Modifier.clickable {
+                                onProductClick(msg.productImageUrl, msg.productModelUrl)
+                            } else Modifier
+                    ) {
+                        ChatMessageUI(message = msg)
+                    }
                 }
                 if (loading) {
                     item {

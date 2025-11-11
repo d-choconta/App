@@ -156,7 +156,8 @@ data class MensajeIA(
     val esUsuario: Boolean,
     val imageUri: Uri? = null,
     val bitmap: Bitmap? = null,
-    val productImageUrl: String? = null
+    val productImageUrl: String? = null,
+    val productModelUrl: String? = null // ⭐ NUEVO
 )
 
 private data class OpcionesExtraidas(val items: List<String>)
@@ -258,6 +259,23 @@ private suspend fun cargarMasProductosPorCategoria(
         .toList()
 }
 
+// ⭐ NUEVO: versión que trae también el modelo
+private suspend fun cargarMasProductosConModelo(
+    style: StyleDb,
+    accessory: AccessoryDb,
+    maxItems: Int = 8,
+    yaMostradas: Set<String>
+): List<Pair<String, String?>> {
+    val productos = RAProductsRepo.loadProductos(style.dbValue, accessory.dbValue)
+    return productos.asSequence()
+        .map { it.imageUrl to it.modelUrl } // se asume RAProductsRepo expone modelUrl
+        .filter { (img, _) -> img?.startsWith("http") == true && img !in yaMostradas }
+        .map { (img, mdl) -> img!! to mdl }
+        .take(maxItems)
+        .toList()
+}
+
+// API pública para otros componentes (sin cambios)
 suspend fun cargarMasOpciones(
     styleUiText: String,
     accessoryUiText: String,
@@ -291,6 +309,12 @@ suspend fun onCategoriaSeleccionada(
     } catch (e: Exception) {
         onError("No fue posible cargar productos: ${e.message}")
     }
+}
+
+// ⭐ NUEVO: helper para detectar 3D
+private fun esModelo3D(url: String): Boolean {
+    val u = url.lowercase()
+    return u.endsWith(".glb") || u.endsWith(".usdz") || "file=" in u
 }
 
 // =====================
@@ -332,7 +356,7 @@ fun PantallaChatIA(
     var sessionId by remember { mutableStateOf<String?>(null) }
     var pusoTitulo by remember { mutableStateOf(false) }
 
-    // Cargar historial
+    // Cargar historial (lee también productModelUrl)
     LaunchedEffect(chatId) {
         val uid = auth.currentUser?.uid ?: run {
             snackbarHostState.showSnackbar("Debes iniciar sesión para chatear"); return@LaunchedEffect
@@ -351,13 +375,15 @@ fun PantallaChatIA(
                     val text = d.getString("text").orEmpty()
                     val userUploadedImageUrl = d.getString("imageUrl")
                     val productUrl = d.getString("productImageUrl")
+                    val modelUrl   = d.getString("productModelUrl") // ⭐ NUEVO
                     MensajeIA(
                         id = d.getTimestamp("createdAt")?.toDate()?.time ?: System.nanoTime(),
                         texto = text,
                         esUsuario = (role == "user"),
                         imageUri = userUploadedImageUrl?.toUri(),
                         bitmap = null,
-                        productImageUrl = productUrl
+                        productImageUrl = productUrl,
+                        productModelUrl = modelUrl // ⭐ NUEVO
                     )
                 }
                 listaMensajes.addAll(historial)
@@ -372,13 +398,14 @@ fun PantallaChatIA(
         if (listaMensajes.isNotEmpty()) listState.animateScrollToItem(listaMensajes.size - 1)
     }
 
-    // Mapear a la UI
+    // Mapear a la UI (pasamos productModelUrl)
     val uiMessages: List<ChatMessageUIModel> = listaMensajes.map { m ->
         ChatMessageUIModel(
             id = m.id.toString(),
             text = m.texto,
             imageUri = m.imageUri,
             productImageUrl = m.productImageUrl,
+            productModelUrl = m.productModelUrl, // ⭐ NUEVO
             isUser = m.esUsuario
         )
     }
@@ -440,6 +467,12 @@ fun PantallaChatIA(
                         )
                         keyboard?.hide()
                     }
+                },
+                // ⭐ Al tocar el producto, abrir AR SOLO si hay modelUrl (lo que pediste)
+                onProductClick = { imageUrl, modelUrl ->
+                    val model = modelUrl ?: return@ChatIAScreenUI  // si no hay modelo, no hacemos nada
+                    val encoded = Uri.encode(model)
+                    navController?.navigate("arviewer?modelUrl=$encoded")
                 },
                 onBack = { navController?.popBackStack() },
                 onHistory = { navController?.navigate("chatguardados") },
@@ -550,7 +583,6 @@ private fun enviarMensajeConGemini(
             val wantsImages = shouldShowCatalogIntent(textoPlano)
             val accessoryRequested = parseAccessory(textoPlano) != null
             val isHomeSpace = isHomeSpaceRequest(textoPlano)
-            // imágenes si el usuario las quiere
             val wantsAccessoryImages = wantsImages && accessoryRequested
 
             val contextualPrompt = buildContextualPrompt(
@@ -565,9 +597,9 @@ private fun enviarMensajeConGemini(
                 context = context
             )
 
-            // 1) URLs que diga el modelo (limpiamos si no corresponde)
-            val urlRegex = Regex("""https?://\S+?\.(?:jpg|jpeg|png|webp)(\?\S+)?""", RegexOption.IGNORE_CASE)
-            var modelUrls = if (wantsAccessoryImages) {
+            // 1) URLs que diga el modelo (incluye imágenes y modelos .glb/.usdz)
+            val urlRegex = Regex("""https?://\S+?\.(?:jpg|jpeg|png|webp|glb|usdz)(\?\S+)?""", RegexOption.IGNORE_CASE)
+            val urlsDelModeloCrudas = if (wantsAccessoryImages) {
                 urlRegex.findAll(respuesta).map { it.value }.toList()
             } else emptyList()
 
@@ -576,22 +608,61 @@ private fun enviarMensajeConGemini(
                 .replace(Regex("\n{3,}"), "\n\n")
                 .trim()
 
-            // 2) Catálogo del MISMO accesorio (multi-estilo) si no hubo URLs y el usuario pidió ver imágenes de accesorio
-            var usedCatalog = false
-            val catalogUrls: MutableList<String> = mutableListOf()
-            var catalogFoundForRequestedType = false
-            val stylesUsed: MutableList<StyleDb> = mutableListOf()
+            // 2) Construir pares (imagen, modelo?) desde el modelo o catálogo
+            var items: List<Pair<String, String?>> = emptyList()
 
-            if (wantsAccessoryImages && modelUrls.isEmpty()) {
+            if (urlsDelModeloCrudas.isNotEmpty()) {
+                items = urlsDelModeloCrudas.map { u -> u to (if (esModelo3D(u)) u else null) }
+            } else if (wantsAccessoryImages) {
                 try {
                     val acc = parseAccessory(textoPlano) ?: AccessoryDb.LAMPARA
                     val preferred = parseStyle(textoPlano)
                     val targetCount = 3
+                    val yaMostradas = buildSet {
+                        listaMensajes.mapNotNullTo(this) { it.productImageUrl?.trim() }
+                        listaMensajes.mapNotNullTo(this) { it.imageUri?.toString()?.trim() }
+                    }
+
+                    val itemsCatalog: MutableList<Pair<String, String?>> = mutableListOf()
+
+                    suspend fun loadItems(style: StyleDb, accessory: AccessoryDb, take: Int): List<Pair<String, String?>> {
+                        return cargarMasProductosConModelo(style, accessory, take, yaMostradas)
+                    }
+
+                    if (preferred != null) itemsCatalog.addAll(loadItems(preferred, acc, targetCount))
+                    if (itemsCatalog.size < targetCount) {
+                        for (style in ALL_STYLES_ORDERED.filter { it != preferred }) {
+                            val need = targetCount - itemsCatalog.size
+                            if (need <= 0) break
+                            itemsCatalog.addAll(loadItems(style, acc, need))
+                        }
+                    }
+
+                    if (itemsCatalog.isNotEmpty()) {
+                        items = itemsCatalog
+                        if (textoLimpio.isBlank()) {
+                            textoLimpio = "Estas son 2–3 referencias visuales del accesorio que mencionaste. ¿Quieres ver más?"
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("PantallaChatIA", "Fallback catálogo con modelo falló: ${e.message}", e)
+                }
+            }
+
+            // 3) Si no hay items (pares), flujo legacy solo imágenes
+            if (items.isEmpty() && wantsAccessoryImages) {
+                val urlRegexImgs = Regex("""https?://\S+?\.(?:jpg|jpeg|png|webp)(\?\S+)?""", RegexOption.IGNORE_CASE)
+                val modelUrlsImgs = urlRegexImgs.findAll(respuesta).map { it.value }.toList()
+                var urls = modelUrlsImgs
+
+                if (urls.isEmpty()) {
+                    val acc = parseAccessory(textoPlano) ?: AccessoryDb.LAMPARA
+                    val preferred = parseStyle(textoPlano)
+                    val targetCount = 3
+                    val catalogUrls: MutableList<String> = mutableListOf()
 
                     suspend fun loadUrls(style: StyleDb, accessory: AccessoryDb, take: Int): List<String> {
                         val productos = RAProductsRepo.loadProductos(style.dbValue, accessory.dbValue)
-                        if (productos.isEmpty()) return emptyList()
-                        catalogFoundForRequestedType = true
                         return productos.asSequence()
                             .mapNotNull { it.imageUrl }
                             .filter { it.startsWith("http") }
@@ -599,75 +670,43 @@ private fun enviarMensajeConGemini(
                             .toList()
                     }
 
-                    if (preferred != null) {
-                        val urlsPref = loadUrls(preferred, acc, targetCount)
-                        if (urlsPref.isNotEmpty()) {
-                            catalogUrls.addAll(urlsPref)
-                            stylesUsed.add(preferred)
-                        }
-                    }
+                    if (preferred != null) catalogUrls.addAll(loadUrls(preferred, acc, targetCount))
                     if (catalogUrls.size < targetCount) {
-                        val remaining = ALL_STYLES_ORDERED.filter { it != preferred }
-                        for (style in remaining) {
+                        for (style in ALL_STYLES_ORDERED.filter { it != preferred }) {
                             val need = targetCount - catalogUrls.size
                             if (need <= 0) break
-                            val u = loadUrls(style, acc, need)
-                            if (u.isNotEmpty()) {
-                                catalogUrls.addAll(u)
-                                stylesUsed.add(style)
-                            }
+                            catalogUrls.addAll(loadUrls(style, acc, need))
                         }
                     }
-                    usedCatalog = catalogUrls.isNotEmpty()
-                    Log.d("PantallaChatIA", "Catalog used=$usedCatalog acc=$acc preferred=${preferred?.dbValue} styles=${stylesUsed.map{it.dbValue}}")
-                } catch (e: Exception) {
-                    Log.e("PantallaChatIA", "Fallback catálogo falló: ${e.message}", e)
-                }
-            }
-
-            // 3) Elegir URLs finales y deduplicar (incluye ya mostradas)
-            var urls = if (modelUrls.isNotEmpty()) modelUrls else catalogUrls
-            val yaMostradas = buildSet {
-                listaMensajes.mapNotNullTo(this) { it.productImageUrl?.trim() }
-                listaMensajes.mapNotNullTo(this) { it.imageUri?.toString()?.trim() }
-            }
-
-            urls = urls.map { it.trim() }.filter { it.isNotBlank() }.distinct().filter { it !in yaMostradas }
-
-            // 4) Ajustar texto coherente
-            if (usedCatalog && urls.isNotEmpty()) {
-                textoLimpio = if (catalogFoundForRequestedType) {
-                    "Estas son 2–3 referencias visuales del accesorio que mencionaste. ¿Quieres ver más?"
-                } else {
-                    val estilosMsg = stylesUsed.joinToString { it.dbValue }
-                    "No encontré exactamente ese estilo, pero te muestro alternativas cercanas ($estilosMsg). ¿Te sirven?"
-                }
-            } else if (!usedCatalog && modelUrls.isEmpty()) {
-                if (textoLimpio.isBlank()) {
-                    val accPedido = parseAccessory(textoPlano)
-                    textoLimpio = when (accPedido) {
-                        AccessoryDb.SOFA   -> "No encontré sofás con ese criterio. ¿Probamos con otro estilo (mediterráneo, industrial o clásico)?"
-                        AccessoryDb.CUADRO -> "No encontré cuadros con ese criterio. ¿Probamos otro estilo o tamaño?"
-                        AccessoryDb.JARRON -> "No encontré jarrones con ese criterio. ¿Probamos otro estilo o material?"
-                        else               -> "Por ahora no encontré opciones para ese criterio. ¿Quieres que intentemos con otro estilo o accesorio?"
+                    urls = catalogUrls
+                    if (urls.isNotEmpty() && textoLimpio.isBlank()) {
+                        textoLimpio = "Estas son 2–3 referencias visuales del accesorio que mencionaste. ¿Quieres ver más?"
                     }
                 }
+
+                val yaMostradas = buildSet {
+                    listaMensajes.mapNotNullTo(this) { it.productImageUrl?.trim() }
+                    listaMensajes.mapNotNullTo(this) { it.imageUri?.toString()?.trim() }
+                }
+                val urlsDedup = urls.map { it.trim() }.filter { it.isNotBlank() }.distinct().filter { it !in yaMostradas }
+                items = urlsDedup.map { it to null } // sin modelo
             }
 
-            // 5) Render en UI (IMÁGENES solo si wantsAccessoryImages)
+            // 4) Render en UI
             withContext(Dispatchers.Main) {
                 if (textoLimpio.isNotBlank()) {
                     listaMensajes.add(MensajeIA(id = System.nanoTime(), texto = textoLimpio, esUsuario = false))
                 }
                 if (wantsAccessoryImages) {
-                    urls.forEach { u ->
+                    items.forEach { (img, mdl) ->
                         listaMensajes.add(
                             MensajeIA(
                                 id = System.nanoTime(),
                                 texto = "",
                                 esUsuario = false,
                                 imageUri = null,
-                                productImageUrl = u
+                                productImageUrl = img,
+                                productModelUrl = mdl // ⭐ NUEVO
                             )
                         )
                     }
@@ -675,17 +714,21 @@ private fun enviarMensajeConGemini(
                 onDone()
             }
 
-            // 6) Persistir en Firestore
+            // 5) Persistir en Firestore (incluye productModelUrl)
             if (textoLimpio.isNotBlank()) {
                 sessionRef.collection("messages").add(
                     mapOf("role" to "assistant", "text" to textoLimpio, "createdAt" to Timestamp.now())
                 ).await()
             }
             if (wantsAccessoryImages) {
-                urls.forEach { u ->
-                    sessionRef.collection("messages").add(
-                        mapOf("role" to "assistant", "productImageUrl" to u, "createdAt" to Timestamp.now())
-                    ).await()
+                items.forEach { (img, mdl) ->
+                    val map = mutableMapOf<String, Any>(
+                        "role" to "assistant",
+                        "productImageUrl" to img,
+                        "createdAt" to Timestamp.now()
+                    )
+                    if (mdl != null) map["productModelUrl"] = mdl // ⭐ NUEVO
+                    sessionRef.collection("messages").add(map).await()
                 }
             }
             sessionRef.update("lastMessageAt", Timestamp.now()).await()

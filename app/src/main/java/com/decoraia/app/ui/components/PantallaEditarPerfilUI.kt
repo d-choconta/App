@@ -25,13 +25,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.BoxWithConstraints
 import coil.compose.AsyncImage
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
 
 /* Paleta */
 private val Cream      = Color(0xFFFBF3E3)
-private val CreamDark  = Color(0xFFF2E7D3)
 private val Terracotta = Color(0xFFE1A172)
 private val TerracottaDark  = Color(0xFFCF8A57)
 private val Cocoa      = Color(0xFFB2754E)
@@ -77,14 +77,33 @@ fun PantallaEditarPerfilUI(
     onGuardar: () -> Unit,
     onBack: () -> Unit,
     onHome: () -> Unit,
-
     photoUrl: String?,
     onChangePhotoClick: () -> Unit
 ) {
     Surface(color = Cream) {
-        Box(Modifier.fillMaxSize()) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val isTablet = maxWidth >= 600.dp
 
-            val headerH = 155.dp
+            val headerH = if (isTablet) 190.dp else 155.dp
+            val horizontalPad = when {
+                maxWidth >= 1000.dp -> 28.dp
+                maxWidth >= 720.dp  -> 22.dp
+                else                -> 20.dp
+            }
+            val titleSize = if (isTablet) 64.sp else 50.sp
+            val avatarSize = when {
+                maxWidth >= 1000.dp -> 380.dp
+                maxWidth >= 720.dp  -> 340.dp
+                else                -> 220.dp
+            }
+            val fieldText = if (isTablet) 20.sp else 18.sp
+            val saveBtnHeight = if (isTablet) 50.dp else 44.dp
+            val bottomBtnSize = if (isTablet) 80.dp else 72.dp
+            val bottomIconSize = if (isTablet) 40.dp else 36.dp
+            val fabSize = if (isTablet) 56.dp else 48.dp
+            val fabIcon = if (isTablet) 30.dp else 26.dp
+
+            // Header
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -97,7 +116,7 @@ fun PantallaEditarPerfilUI(
                     onClick = onBack,
                     modifier = Modifier
                         .padding(start = 17.dp, top = 17.dp)
-                        .size(60.dp)
+                        .size(if (isTablet) 66.dp else 60.dp)
                         .clip(CircleShape)
                         .background(Cocoa.copy(alpha = 0.9f))
                         .border(2.dp, Terracotta, CircleShape)
@@ -116,7 +135,7 @@ fun PantallaEditarPerfilUI(
                         color = Graphite,
                         fontFamily = InriaSans,
                         fontWeight = FontWeight.Normal,
-                        fontSize = 50.sp
+                        fontSize = titleSize
                     ),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -124,21 +143,21 @@ fun PantallaEditarPerfilUI(
                 )
             }
 
+            // CONTENIDO centrado
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = headerH)
-                    .padding(horizontal = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = horizontalPad),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
 
-                // ===== Avatar + botón =====
+                // Avatar grande + FAB
                 Box(
-                    modifier = Modifier
-                        .size(220.dp),
+                    modifier = Modifier.size(avatarSize),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Círculo con borde que SÍ recorta solo la foto
                     Box(
                         modifier = Modifier
                             .matchParentSize()
@@ -164,7 +183,6 @@ fun PantallaEditarPerfilUI(
                         }
                     }
 
-                    // FAB (+) visible y con borde
                     SmallFloatingActionButton(
                         onClick = onChangePhotoClick,
                         containerColor = Terracotta,
@@ -172,17 +190,17 @@ fun PantallaEditarPerfilUI(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .offset(x = (-8).dp, y = (-8).dp)
-                            .size(48.dp),
+                            .size(fabSize)
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Add,
                             contentDescription = "Cambiar foto",
-                            modifier = Modifier.size(26.dp)
+                            modifier = Modifier.size(fabIcon)
                         )
                     }
                 }
 
-                Spacer(Modifier.height(0.dp))
+                Spacer(Modifier.height(if (isTablet) 12.dp else 0.dp))
 
                 ElevatedCard(
                     shape = RoundedCornerShape(18.dp),
@@ -210,25 +228,25 @@ fun PantallaEditarPerfilUI(
 
                         OutlinedTextField(
                             value = nombre, onValueChange = onNombre,
-                            label = { Text("Nombre de Usuario") },
+                            label = { Text("Nombre de Usuario", fontSize = fieldText) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = tfShape, colors = tfColors, singleLine = true
                         )
                         OutlinedTextField(
                             value = celular, onValueChange = onCelular,
-                            label = { Text("Celular") },
+                            label = { Text("Celular", fontSize = fieldText) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = tfShape, colors = tfColors, singleLine = true
                         )
                         OutlinedTextField(
                             value = pais, onValueChange = onPais,
-                            label = { Text("País") },
+                            label = { Text("País", fontSize = fieldText) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = tfShape, colors = tfColors, singleLine = true
                         )
                         OutlinedTextField(
                             value = password, onValueChange = onPassword,
-                            label = { Text("Contraseña") },
+                            label = { Text("Contraseña", fontSize = fieldText) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = tfShape, colors = tfColors, singleLine = true
                         )
@@ -243,16 +261,13 @@ fun PantallaEditarPerfilUI(
                             shape = RoundedCornerShape(14.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(44.dp)
-                        ) {
-                            Text("Guardar", fontWeight = FontWeight.SemiBold)
-                        }
+                                .height(saveBtnHeight)
+                        ) { Text("Guardar", fontWeight = FontWeight.SemiBold) }
                     }
                 }
-
-                Spacer(Modifier.height(8.dp))
             }
 
+            // Botón home inferior
             Row(
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -264,7 +279,7 @@ fun PantallaEditarPerfilUI(
                 IconButton(
                     onClick = onHome,
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(bottomBtnSize)
                         .clip(CircleShape)
                         .background(Cocoa.copy(alpha = 0.9f))
                         .border(2.dp, Terracotta, CircleShape)
@@ -273,12 +288,11 @@ fun PantallaEditarPerfilUI(
                         imageVector = Icons.Filled.Home,
                         contentDescription = "Inicio",
                         tint = Color.White,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(bottomIconSize)
                     )
                 }
-
-                Spacer(Modifier.width(72.dp))
+                Spacer(Modifier.width(bottomBtnSize))
+            }
             }
         }
-    }
 }

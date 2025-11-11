@@ -24,6 +24,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.BoxWithConstraints
 import coil.compose.AsyncImage
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
@@ -77,13 +78,26 @@ fun PantallaPerfilUI(
     onLogout: () -> Unit,
     onHome: () -> Unit
 ) {
-    // === Estado del diálogo de confirmación de salida ===
     var showLogoutDialog by remember { mutableStateOf(false) }
 
     Surface(color = Cream) {
-        Box(Modifier.fillMaxSize()) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val isTablet = maxWidth >= 600.dp
+            val headerH = if (isTablet) 190.dp else 155.dp
+            val horizontalPad = when {
+                maxWidth >= 1000.dp -> 28.dp
+                maxWidth >= 720.dp  -> 22.dp
+                else                -> 16.dp
+            }
 
-            val headerH = 155.dp
+            val titleSize = if (isTablet) 64.sp else 50.sp
+            val avatarSize = if (isTablet) 260.dp else 220.dp
+            val cardTitleSize = if (isTablet) 22.sp else 20.sp
+            val quickCardHeight = if (isTablet) 130.dp else 110.dp
+            val bottomBtnSize = if (isTablet) 80.dp else 72.dp
+            val bottomIconSize = if (isTablet) 40.dp else 36.dp
+            val actionBtnHeight = if (isTablet) 52.dp else 46.dp
+
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -96,7 +110,7 @@ fun PantallaPerfilUI(
                     onClick = onBack,
                     modifier = Modifier
                         .padding(start = 17.dp, top = 17.dp)
-                        .size(60.dp)
+                        .size(if (isTablet) 66.dp else 60.dp)
                         .clip(CircleShape)
                         .background(Cocoa.copy(alpha = 0.9f))
                         .border(2.dp, Terracotta, CircleShape)
@@ -115,7 +129,7 @@ fun PantallaPerfilUI(
                         color = Graphite,
                         fontFamily = InriaSans,
                         fontWeight = FontWeight.Normal,
-                        fontSize = 50.sp
+                        fontSize = titleSize
                     ),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -123,17 +137,20 @@ fun PantallaPerfilUI(
                 )
             }
 
+            // CONTENIDO: centrado vertical en el alto restante
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = headerH)
-                    .padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(horizontal = horizontalPad),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                // Avatar (URL o drawable local)
+
+                // Avatar
                 Box(
                     modifier = Modifier
-                        .size(220.dp)
+                        .size(avatarSize)
                         .clip(CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
@@ -154,37 +171,37 @@ fun PantallaPerfilUI(
                     }
                 }
 
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(if (isTablet) 8.dp else 2.dp))
 
-                // Tarjeta de datos
+                // Datos
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(CardWarm, RoundedCornerShape(16.dp))
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .padding(horizontal = 16.dp, vertical = 10.dp)
                 ) {
                     Text(
                         "Nombre: ${nombre.ifBlank { "(sin nombre)" }}",
                         color = Color.White, fontFamily = MuseoModerno,
-                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp
+                        fontWeight = FontWeight.SemiBold, fontSize = cardTitleSize
                     )
                     Text(
                         "Correo: ${email.ifBlank { "(sin email)" }}",
                         color = Color.White, fontFamily = MuseoModerno,
-                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp
+                        fontWeight = FontWeight.SemiBold, fontSize = cardTitleSize
                     )
                     Text(
                         "Celular: ${celular.ifBlank { "(sin celular)" }}",
                         color = Color.White, fontFamily = MuseoModerno,
-                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp
+                        fontWeight = FontWeight.SemiBold, fontSize = cardTitleSize
                     )
                     Text(
                         "País: ${pais.ifBlank { "(sin país)" }}",
                         color = Color.White, fontFamily = MuseoModerno,
-                        fontWeight = FontWeight.SemiBold, fontSize = 20.sp
+                        fontWeight = FontWeight.SemiBold, fontSize = cardTitleSize
                     )
 
-                    Spacer(Modifier.height(0.dp))
+                    Spacer(Modifier.height(6.dp))
                     Button(
                         onClick = onEdit,
                         colors = ButtonDefaults.buttonColors(
@@ -193,11 +210,11 @@ fun PantallaPerfilUI(
                         ),
                         modifier = Modifier.align(Alignment.End),
                         shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 26.dp, vertical = 6.dp)
+                        contentPadding = PaddingValues(horizontal = 28.dp, vertical = 8.dp)
                     ) { Text("Editar") }
                 }
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(16.dp))
 
                 // Favoritos / Chats
                 Row(
@@ -208,7 +225,7 @@ fun PantallaPerfilUI(
                         onClick = onFavoritos,
                         modifier = Modifier
                             .weight(1f)
-                            .height(110.dp),
+                            .height(quickCardHeight),
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Box(
@@ -241,7 +258,7 @@ fun PantallaPerfilUI(
                         onClick = onChats,
                         modifier = Modifier
                             .weight(1f)
-                            .height(110.dp),
+                            .height(quickCardHeight),
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Box(
@@ -272,24 +289,22 @@ fun PantallaPerfilUI(
                     }
                 }
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(16.dp))
 
-                // Botón que abre el diálogo de confirmación
                 Button(
                     onClick = { showLogoutDialog = true },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(46.dp),
+                        .height(actionBtnHeight),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFE9B0B0),
                         contentColor = Graphite
                     ),
                     shape = RoundedCornerShape(16.dp)
                 ) { Text("Log out", fontWeight = FontWeight.SemiBold) }
-
-                Spacer(Modifier.height(8.dp))
             }
 
+            // Bottom floating home
             Row(
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -301,7 +316,7 @@ fun PantallaPerfilUI(
                 IconButton(
                     onClick = onHome,
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(bottomBtnSize)
                         .clip(CircleShape)
                         .background(Cocoa.copy(alpha = 0.9f))
                         .border(2.dp, Terracotta, CircleShape)
@@ -310,14 +325,12 @@ fun PantallaPerfilUI(
                         imageVector = Icons.Filled.Home,
                         contentDescription = "Inicio",
                         tint = Color.White,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(bottomIconSize)
                     )
                 }
-
-                Spacer(Modifier.width(72.dp))
+                Spacer(Modifier.width(bottomBtnSize))
             }
 
-            // ===== Diálogo de confirmación de salida =====
             if (showLogoutDialog) {
                 AlertDialog(
                     onDismissRequest = { showLogoutDialog = false },
@@ -336,10 +349,7 @@ fun PantallaPerfilUI(
                         Text(
                             "¿Estás seguro de que deseas salir de tu cuenta?",
                             color = Cocoa,
-                            style = TextStyle(
-                                fontFamily = InriaSans,
-                                fontSize = 16.sp
-                            )
+                            style = TextStyle(fontFamily = InriaSans, fontSize = 16.sp)
                         )
                     },
                     confirmButton = {
@@ -347,22 +357,12 @@ fun PantallaPerfilUI(
                             showLogoutDialog = false
                             onLogout()
                         }) {
-                            Text(
-                                "Salir",
-                                color = Terracotta,
-                                fontSize = 18.sp,
-                                fontFamily = InriaSans
-                            )
+                            Text("Salir", color = Terracotta, fontSize = 18.sp, fontFamily = InriaSans)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showLogoutDialog = false }) {
-                            Text(
-                                "Cancelar",
-                                color = Cocoa,
-                                fontSize = 18.sp,
-                                fontFamily = InriaSans
-                            )
+                            Text("Cancelar", color = Cocoa, fontSize = 18.sp, fontFamily = InriaSans)
                         }
                     },
                     shape = RoundedCornerShape(18.dp),
@@ -372,6 +372,6 @@ fun PantallaPerfilUI(
                     textContentColor = Graphite
                 )
             }
+            }
         }
-    }
 }
