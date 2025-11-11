@@ -24,6 +24,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -34,7 +35,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.decoraia.app.R
 import com.decoraia.app.ui.theme.InriaSans
+import androidx.compose.ui.unit.Dp
 
+/* Paleta */
 private val Cream           = Color(0xFFFBF3E3)
 private val Terracotta      = Color(0xFFE1A172)
 private val TerracottaDark  = Color(0xFFCF8A57)
@@ -42,6 +45,7 @@ private val Cocoa           = Color(0xFFB2754E)
 private val Graphite        = Color(0xFF2D2A26)
 private val ErrorRed        = Color(0xFFD32F2F)
 
+/* Waves */
 @Composable
 private fun TopWaves(modifier: Modifier = Modifier) {
     Canvas(modifier = modifier) {
@@ -67,6 +71,71 @@ private fun TopWaves(modifier: Modifier = Modifier) {
     }
 }
 
+/* ---------- Responsive helpers ---------- */
+private data class LoginResponsive(
+    val horizontalPadding: Dp,
+    val topHeaderHeight: Dp,
+    val titleSize: Int,
+    val titleLineHeight: Int,
+    val logoRingSize: Dp,
+    val logoSize: Dp,
+    val textFieldText: Int,
+    val textFieldLabel: Int,
+    val buttonHeight: Dp,
+    val buttonText: Int,
+    val iconBackSize: Int,
+    val backBtnSize: Dp
+)
+
+@Composable
+private fun rememberLoginResponsive(): LoginResponsive {
+    val conf = LocalConfiguration.current
+    val minDim = minOf(conf.smallestScreenWidthDp, conf.screenWidthDp)
+
+    return when {
+        // phone chico
+        minDim < 360 -> LoginResponsive(
+            horizontalPadding = 16.dp,
+            topHeaderHeight = 72.dp,
+            titleSize = 34, titleLineHeight = 36,
+            logoRingSize = 180.dp, logoSize = 120.dp,
+            textFieldText = 16, textFieldLabel = 14,
+            buttonHeight = 46.dp, buttonText = 18,
+            iconBackSize = 20, backBtnSize = 44.dp
+        )
+        // phone normal/grande
+        minDim < 600 -> LoginResponsive(
+            horizontalPadding = 24.dp,
+            topHeaderHeight = 90.dp,
+            titleSize = 46, titleLineHeight = 48,
+            logoRingSize = 230.dp, logoSize = 170.dp,
+            textFieldText = 18, textFieldLabel = 16,
+            buttonHeight = 52.dp, buttonText = 20,
+            iconBackSize = 22, backBtnSize = 56.dp
+        )
+        // tablet chica
+        minDim < 840 -> LoginResponsive(
+            horizontalPadding = 64.dp,
+            topHeaderHeight = 120.dp,
+            titleSize = 58, titleLineHeight = 60,
+            logoRingSize = 300.dp, logoSize = 220.dp,
+            textFieldText = 20, textFieldLabel = 18,
+            buttonHeight = 60.dp, buttonText = 22,
+            iconBackSize = 24, backBtnSize = 64.dp
+        )
+        // tablet grande / desktop
+        else -> LoginResponsive(
+            horizontalPadding = 96.dp,
+            topHeaderHeight = 140.dp,
+            titleSize = 64, titleLineHeight = 66,
+            logoRingSize = 340.dp, logoSize = 250.dp,
+            textFieldText = 22, textFieldLabel = 20,
+            buttonHeight = 64.dp, buttonText = 24,
+            iconBackSize = 26, backBtnSize = 68.dp
+        )
+    }
+}
+
 /* ---- Login UI ---- */
 @Composable
 fun LoginScreenUI(
@@ -83,16 +152,19 @@ fun LoginScreenUI(
     passwordError: String? = null,
     authError: String? = null
 ) {
+    val resp = rememberLoginResponsive()
+    val conf = LocalConfiguration.current
+    val isTablet = conf.smallestScreenWidthDp >= 600
     val passwordFocus = remember { FocusRequester() }
 
     Surface(color = Cream) {
         Box(Modifier.fillMaxSize()) {
 
-            val headerHeight = 90.dp
+            // Header
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(headerHeight)
+                    .height(resp.topHeaderHeight)
                     .align(Alignment.TopStart)
             ) {
                 TopWaves(Modifier.fillMaxSize())
@@ -101,7 +173,7 @@ fun LoginScreenUI(
                     onClick = onBack,
                     modifier = Modifier
                         .padding(start = 17.dp, top = 17.dp)
-                        .size(60.dp)
+                        .size(resp.backBtnSize)
                         .clip(CircleShape)
                         .background(Cocoa.copy(alpha = 0.9f))
                         .border(2.dp, Terracotta, CircleShape)
@@ -110,213 +182,222 @@ fun LoginScreenUI(
                     Icon(
                         imageVector = Icons.Filled.ArrowBack,
                         contentDescription = "Atrás",
-                        tint = Color.White
+                        tint = Color.White,
+                        modifier = Modifier.size(resp.iconBackSize.dp)
                     )
                 }
             }
 
-            Column(
+            // Contenido centrado y con ancho máximo
+            Box(
                 Modifier
                     .fillMaxSize()
-                    .padding(top = 90.dp)
-                    .padding(horizontal = 30.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(top = resp.topHeaderHeight)
             ) {
-                Text(
-                    "Inicia\nSesión",
-                    color = Graphite,
-                    style = TextStyle(
-                        fontFamily = InriaSans,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 50.sp,
-                        lineHeight = 52.sp,
-                        textAlign = TextAlign.Center
-                    )
-                )
-
-                Spacer(Modifier.height(15.dp))
-
-                Box(
-                    modifier = Modifier.size(220.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(300.dp)
-                            .clip(CircleShape)
-                            .border(3.dp, Cocoa, CircleShape)
-                    )
-
-                    Image(
-                        painter = painterResource(id = R.drawable.logo),
-                        contentDescription = "Logo",
-                        modifier = Modifier.size(170.dp),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                // ---- Correo ----
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = onEmailChange,
-                    singleLine = true,
-                    isError = emailError != null,
-                    enabled = !loading,
-                    supportingText = {
-                        if (emailError != null) Text(emailError, color = ErrorRed, fontSize = 12.sp)
-                    },
-                    textStyle = TextStyle(
-                        fontFamily = InriaSans,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 20.sp
-                    ),
-                    label = {
-                        Text(
-                            "Correo electrónico",
-                            style = TextStyle(
-                                fontFamily = InriaSans,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 20.sp
-                            )
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { passwordFocus.requestFocus() }
-                    ),
-                    shape = RoundedCornerShape(22.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Graphite,
-                        unfocusedTextColor = Graphite,
-                        focusedLabelColor = if (emailError != null) ErrorRed else Cocoa,
-                        unfocusedLabelColor = Cocoa.copy(alpha = .9f),
-                        cursorColor = if (emailError != null) ErrorRed else Cocoa,
-                        focusedBorderColor = if (emailError != null) ErrorRed else Cocoa,
-                        unfocusedBorderColor = if (emailError != null) ErrorRed else Terracotta,
-                        errorBorderColor = ErrorRed,
-                        errorLabelColor = ErrorRed,
-                        errorCursorColor = ErrorRed
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(Modifier.height(5.dp))
-
-                // ---- Contraseña ----
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = onPasswordChange,
-                    singleLine = true,
-                    isError = passwordError != null,
-                    enabled = !loading,
-                    supportingText = {
-                        if (passwordError != null) Text(passwordError, color = ErrorRed, fontSize = 12.sp)
-                    },
-                    textStyle = TextStyle(
-                        fontFamily = InriaSans,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 20.sp
-                    ),
-                    label = {
-                        Text(
-                            "Contraseña",
-                            style = TextStyle(
-                                fontFamily = InriaSans,
-                                fontWeight = FontWeight.Normal,
-                                fontSize = 20.sp
-                            )
-                        )
-                    },
-                    visualTransformation = PasswordVisualTransformation(),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = { if (!loading) onLoginClick() }
-                    ),
-                    shape = RoundedCornerShape(22.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Graphite,
-                        unfocusedTextColor = Graphite,
-                        focusedLabelColor = if (passwordError != null) ErrorRed else Cocoa,
-                        unfocusedLabelColor = Cocoa.copy(alpha = .9f),
-                        cursorColor = if (passwordError != null) ErrorRed else Cocoa,
-                        focusedBorderColor = if (passwordError != null) ErrorRed else Cocoa,
-                        unfocusedBorderColor = if (passwordError != null) ErrorRed else Terracotta,
-                        errorBorderColor = ErrorRed,
-                        errorLabelColor = ErrorRed,
-                        errorCursorColor = ErrorRed
-                    ),
-                    modifier = Modifier
+                Column(
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .widthIn(max = if (isTablet) 980.dp else 720.dp)
                         .fillMaxWidth()
-                        .focusRequester(passwordFocus)
-                )
-
-                Spacer(Modifier.height(0.dp))
-
-                TextButton(onClick = onForgotClick, modifier = Modifier.align(Alignment.Start), enabled = !loading) {
+                        .padding(horizontal = resp.horizontalPadding),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
-                        "¿Olvidaste tu contraseña?",
-                        color = Cocoa,
-                        fontFamily = InriaSans,
-                        fontWeight = FontWeight.Normal,
-                        fontSize = 17.sp
-                    )
-                }
-                Spacer(Modifier.height(0.dp))
-
-                Button(
-                    onClick = onLoginClick,
-                    enabled = !loading,
-                    shape = RoundedCornerShape(26.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Terracotta,
-                        contentColor = Graphite
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                ) {
-                    if (loading) {
-                        CircularProgressIndicator(
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    } else {
-                        Text(
-                            "Ingresar",
+                        "Inicia\nSesión",
+                        color = Graphite,
+                        style = TextStyle(
                             fontFamily = InriaSans,
-                            fontWeight = FontWeight.Light,
-                            fontSize = 22.sp,
-                            color = Graphite
+                            fontWeight = FontWeight.Normal,
+                            fontSize = resp.titleSize.sp,
+                            lineHeight = resp.titleLineHeight.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    )
+
+                    Spacer(Modifier.height(if (isTablet) 20.dp else 15.dp))
+
+                    Box(
+                        modifier = Modifier.size(resp.logoRingSize),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(resp.logoRingSize)
+                                .clip(CircleShape)
+                                .border(3.dp, Cocoa, CircleShape)
+                        )
+
+                        Image(
+                            painter = painterResource(id = R.drawable.logo),
+                            contentDescription = "Logo",
+                            modifier = Modifier.size(resp.logoSize),
+                            contentScale = ContentScale.Crop
                         )
                     }
-                }
 
-                if (!authError.isNullOrBlank()) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(authError!!, color = ErrorRed, fontSize = 13.sp)
-                }
+                    Spacer(Modifier.height(if (isTablet) 20.dp else 16.dp))
 
-                Spacer(Modifier.height(0.dp))
-
-                TextButton(onClick = onRegisterClick, enabled = !loading) {
-                    Text(
-                        "¿No tienes una cuenta?",
-                        color = Cocoa,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Normal,
-                        fontFamily = InriaSans
+                    // ---- Correo ----
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = onEmailChange,
+                        singleLine = true,
+                        isError = emailError != null,
+                        enabled = !loading,
+                        supportingText = {
+                            if (emailError != null) Text(emailError, color = ErrorRed, fontSize = 12.sp)
+                        },
+                        textStyle = TextStyle(
+                            fontFamily = InriaSans,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = resp.textFieldText.sp
+                        ),
+                        label = {
+                            Text(
+                                "Correo electrónico",
+                                style = TextStyle(
+                                    fontFamily = InriaSans,
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = resp.textFieldLabel.sp
+                                )
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { passwordFocus.requestFocus() }
+                        ),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Graphite,
+                            unfocusedTextColor = Graphite,
+                            focusedLabelColor = if (emailError != null) ErrorRed else Cocoa,
+                            unfocusedLabelColor = Cocoa.copy(alpha = .9f),
+                            cursorColor = if (emailError != null) ErrorRed else Cocoa,
+                            focusedBorderColor = if (emailError != null) ErrorRed else Cocoa,
+                            unfocusedBorderColor = if (emailError != null) ErrorRed else Terracotta,
+                            errorBorderColor = ErrorRed,
+                            errorLabelColor = ErrorRed,
+                            errorCursorColor = ErrorRed
+                        ),
+                        modifier = Modifier.fillMaxWidth()
                     )
+
+                    Spacer(Modifier.height(if (isTablet) 10.dp else 5.dp))
+
+                    // ---- Contraseña ----
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = onPasswordChange,
+                        singleLine = true,
+                        isError = passwordError != null,
+                        enabled = !loading,
+                        supportingText = {
+                            if (passwordError != null) Text(passwordError, color = ErrorRed, fontSize = 12.sp)
+                        },
+                        textStyle = TextStyle(
+                            fontFamily = InriaSans,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = resp.textFieldText.sp
+                        ),
+                        label = {
+                            Text(
+                                "Contraseña",
+                                style = TextStyle(
+                                    fontFamily = InriaSans,
+                                    fontWeight = FontWeight.Normal,
+                                    fontSize = resp.textFieldLabel.sp
+                                )
+                            )
+                        },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { if (!loading) onLoginClick() }
+                        ),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Graphite,
+                            unfocusedTextColor = Graphite,
+                            focusedLabelColor = if (passwordError != null) ErrorRed else Cocoa,
+                            unfocusedLabelColor = Cocoa.copy(alpha = .9f),
+                            cursorColor = if (passwordError != null) ErrorRed else Cocoa,
+                            focusedBorderColor = if (passwordError != null) ErrorRed else Cocoa,
+                            unfocusedBorderColor = if (passwordError != null) ErrorRed else Terracotta,
+                            errorBorderColor = ErrorRed,
+                            errorLabelColor = ErrorRed,
+                            errorCursorColor = ErrorRed
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(passwordFocus)
+                    )
+
+                    Spacer(Modifier.height(0.dp))
+
+                    TextButton(onClick = onForgotClick, modifier = Modifier.align(Alignment.Start), enabled = !loading) {
+                        Text(
+                            "¿Olvidaste tu contraseña?",
+                            color = Cocoa,
+                            fontFamily = InriaSans,
+                            fontWeight = FontWeight.Normal,
+                            fontSize = if (isTablet) 18.sp else 17.sp
+                        )
+                    }
+                    Spacer(Modifier.height(0.dp))
+
+                    Button(
+                        onClick = onLoginClick,
+                        enabled = !loading,
+                        shape = RoundedCornerShape(26.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Terracotta,
+                            contentColor = Graphite
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(resp.buttonHeight),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                    ) {
+                        if (loading) {
+                            CircularProgressIndicator(
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else {
+                            Text(
+                                "Ingresar",
+                                fontFamily = InriaSans,
+                                fontWeight = FontWeight.Light,
+                                fontSize = resp.buttonText.sp,
+                                color = Graphite
+                            )
+                        }
+                    }
+
+                    if (!authError.isNullOrBlank()) {
+                        Spacer(Modifier.height(if (isTablet) 10.dp else 6.dp))
+                        Text(authError!!, color = ErrorRed, fontSize = 13.sp)
+                    }
+
+                    Spacer(Modifier.height(0.dp))
+
+                    TextButton(onClick = onRegisterClick, enabled = !loading) {
+                        Text(
+                            "¿No tienes una cuenta?",
+                            color = Cocoa,
+                            fontSize = if (isTablet) 20.sp else 18.sp,
+                            fontWeight = FontWeight.Normal,
+                            fontFamily = InriaSans
+                        )
+                    }
+                    Spacer(Modifier.height(0.dp))
                 }
-                Spacer(Modifier.height(0.dp))
             }
             }
         }

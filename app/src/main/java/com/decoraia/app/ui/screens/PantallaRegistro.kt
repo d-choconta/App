@@ -143,5 +143,5 @@ fun PantallaRegistro(navController: NavHostController) {
         passwordError = passError,
         confirmError = confirmError,
         actionError = actionError
-    )
+        )
 }

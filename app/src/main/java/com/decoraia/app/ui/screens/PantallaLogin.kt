@@ -128,5 +128,5 @@ fun PantallaLogin(navController: NavHostController) {
         emailError      = emailError,
         passwordError   = passError,
         authError       = authError
-    )
+        )
 }
