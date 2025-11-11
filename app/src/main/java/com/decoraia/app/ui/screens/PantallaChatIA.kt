@@ -56,7 +56,6 @@ enum class AccessoryDb(val dbValue: String) {
     SOFA("sofa")
 }
 
-// Orden base para fallback multi-estilo (mismo accesorio)
 private val ALL_STYLES_ORDERED = listOf(
     StyleDb.MEDITERRANEO, StyleDb.MINIMALISTA, StyleDb.INDUSTRIAL, StyleDb.CLASICO
 )
@@ -76,6 +75,14 @@ private val ACCESSORY_SYNONYMS: Map<String, AccessoryDb> = mapOf(
     "cuadro" to AccessoryDb.CUADRO, "cuadros" to AccessoryDb.CUADRO, "lámina" to AccessoryDb.CUADRO, "lamina" to AccessoryDb.CUADRO,
     "lampara" to AccessoryDb.LAMPARA, "lámpara" to AccessoryDb.LAMPARA, "luminaria" to AccessoryDb.LAMPARA, "colgante" to AccessoryDb.LAMPARA, "pendant" to AccessoryDb.LAMPARA,
     "sofa" to AccessoryDb.SOFA, "sofá" to AccessoryDb.SOFA, "sofas" to AccessoryDb.SOFA, "sofás" to AccessoryDb.SOFA
+)
+
+// Todos los espacios del hogar
+private val HOME_SPACE_KEYWORDS = listOf(
+    "sala","living","cuarto","habitacion","habitación","dormitorio","recamara","recámara",
+    "comedor","cocina","baño","bano","hall","recibidor","entrada","pasillo",
+    "balcon","balcón","terraza","estudio","oficina","biblioteca","home office",
+    "zona de tv","sala de estar","family room","lobby","vestíbulo","closet","lavanderia","lavadero"
 )
 
 // =====================
@@ -111,7 +118,7 @@ private fun normalizeForIntent(raw: String): String {
 private val TEXT_ONLY_TRIGGERS = listOf(
     "en texto", "solo texto", "sin imagen", "sin imagenes",
     "sin fotos", "no muestres fotos", "no mostrar fotos",
-    "explicacion sin imagenes", "solo explicacion"
+    "explicacion sin imagenes", "solo explicacion", "solo explicaciones"
 )
 
 private val SHOW_IMAGE_TRIGGERS = listOf(
@@ -120,13 +127,24 @@ private val SHOW_IMAGE_TRIGGERS = listOf(
     "busco", "fotos", "imagenes", "imagen", "dame", "enviame", "ponme", "traeme", "tráeme"
 )
 
-// Intención para mostrar catálogo/imagenes (corregida)
+// Intención para mostrar catálogo/imagenes
 private fun shouldShowCatalogIntent(text: String): Boolean {
     val t = normalizeForIntent(text)
-    // prioridad: si pide explícitamente "texto", NO activar catálogo
     if (TEXT_ONLY_TRIGGERS.any { it in t }) return false
-    // de lo contrario, activar si hay trigger visual
     return SHOW_IMAGE_TRIGGERS.any { it in t }
+}
+
+// ¿El usuario pide asesoría integral para un espacio interior?
+private fun isHomeSpaceRequest(text: String): Boolean {
+    val t = text.lowercase()
+    val mentionsSpace = HOME_SPACE_KEYWORDS.any { it in t }
+    val mentionsAccessory = parseAccessory(text) != null
+    return mentionsSpace && !mentionsAccessory
+}
+
+private fun mentionsSmallSpace(text: String): Boolean {
+    val t = text.lowercase()
+    return listOf("pequeño","pequeno","pocos metros","reducido","angosto","estrecho","mini","muy chico").any { it in t }
 }
 
 // =====================
@@ -136,9 +154,9 @@ data class MensajeIA(
     val id: Long = System.nanoTime(),
     val texto: String,
     val esUsuario: Boolean,
-    val imageUri: Uri? = null,           // content:// o https:// (turno usuario o imagen subida)
+    val imageUri: Uri? = null,
     val bitmap: Bitmap? = null,
-    val productImageUrl: String? = null  // imágenes del asistente (render preferido)
+    val productImageUrl: String? = null
 )
 
 private data class OpcionesExtraidas(val items: List<String>)
@@ -172,29 +190,60 @@ private fun detectarIndiceElegido(userText: String, total: Int): Int? {
     return null
 }
 
-private fun buildContextualPrompt(historial: List<MensajeIA>, userText: String): String {
+private fun buildContextualPrompt(
+    historial: List<MensajeIA>,
+    userText: String,
+    wantsImages: Boolean,
+    isHomeSpace: Boolean,
+    accessoryRequested: Boolean
+): String {
     val slice = historial.takeLast(12)
     val sb = StringBuilder()
-    sb.appendLine(
-        """
-        Eres un asesor de decoración. NO repitas saludos ni presentaciones. 
-        Continúa la conversación según el contexto y avanza sin reexplicar lo anterior.
-        """.trimIndent()
-    )
+    sb.appendLine("Eres un asesor de decoración. NO repitas saludos ni presentaciones.")
+    sb.appendLine("Continúa la conversación según el contexto y avanza sin reexplicar lo anterior.")
+
+    // Política de entrega de medios
+    if (!wantsImages) {
+        sb.appendLine("El usuario NO pidió imágenes: responde SOLO TEXTO, NO incluyas URLs ni fotos.")
+    } else {
+        if (accessoryRequested) {
+            sb.appendLine("El usuario SÍ pidió ver imágenes de un accesorio: puedes incluir hasta 2 o 3 URLs del catálogo.")
+        } else {
+            sb.appendLine("El usuario pidió 'ver', pero no especificó accesorio: responde SOLO TEXTO y pregunta qué accesorio quiere ver (lámpara, jarrón, cuadro, sofá).")
+        }
+    }
+
+    // Guía integral para espacios del hogar
+    if (isHomeSpace) {
+        sb.appendLine("""
+            El usuario pide recomendaciones para un espacio interior del hogar.
+            Genera una guía integral con:
+            - Estilo recomendado, paleta base+acentos, materiales y texturas.
+            - Distribución y escalas (medidas orientativas), iluminación en capas.
+            - Textiles y tapetes (tamaños), arte/paredes (altura/agrupación), plantas/detalles.
+            - Si es pequeño: trucos de amplitud visual y funcionalidad.
+            - Cierra con 2–3 próximos pasos accionables.
+            Sé conciso: 6–10 viñetas en total.
+        """.trimIndent())
+
+        if (mentionsSmallSpace(userText)) {
+            sb.appendLine("Incluye trucos para espacios pequeños (alturas, espejos, continuidad de color, muebles elevados, almacenamiento integrado).")
+        }
+    }
+
     sb.appendLine("\nContexto reciente:")
     slice.forEach { m ->
         val who = if (m.esUsuario) "Usuario" else "Asistente"
         if (m.texto.isNotBlank()) sb.appendLine("- $who: ${m.texto.take(400)}")
     }
     sb.appendLine("\nUsuario ahora dice: $userText")
-    sb.appendLine("\nResponde breve y accionable, siguiendo esa intención.")
+    sb.appendLine("\nResponde breve, accionable y siguiendo las reglas anteriores.")
     return sb.toString()
 }
 
 // =====================
 // Utilidad de catálogo (SIEMPRE mismo accesorio)
 // =====================
-// Función para cargar más imágenes
 private suspend fun cargarMasProductosPorCategoria(
     style: StyleDb,
     accessory: AccessoryDb,
@@ -209,11 +258,10 @@ private suspend fun cargarMasProductosPorCategoria(
         .toList()
 }
 
-// En tu código principal, cuando el usuario pide más opciones
 suspend fun cargarMasOpciones(
     styleUiText: String,
     accessoryUiText: String,
-    yaMostradas: Set<String>,   // El conjunto de URLs ya mostradas
+    yaMostradas: Set<String>,
     onResult: (List<String>) -> Unit,
     onError: (String) -> Unit
 ) {
@@ -221,15 +269,13 @@ suspend fun cargarMasOpciones(
     val acc = parseAccessory(accessoryUiText) ?: return onError("Accesorio no reconocido")
 
     try {
-        // Llamamos a la función que carga más productos
         val urls = cargarMasProductosPorCategoria(style, acc, maxItems = 8, yaMostradas)
-        onResult(urls) // Pasamos las URLs obtenidas al callback
+        onResult(urls)
     } catch (e: Exception) {
         onError("No fue posible cargar productos: ${e.message}")
     }
 }
 
-// Handler para taps externos (si lo usas en otra pantalla)
 suspend fun onCategoriaSeleccionada(
     styleUiText: String,
     accessoryUiText: String,
@@ -240,13 +286,13 @@ suspend fun onCategoriaSeleccionada(
     val acc   = parseAccessory(accessoryUiText) ?: return onError("Accesorio no reconocido")
 
     try {
-        // SOLUCIÓN: Pasamos emptySet()
         val urls = cargarMasProductosPorCategoria(style, acc, maxItems = 8, yaMostradas = emptySet())
         onResult(urls)
     } catch (e: Exception) {
         onError("No fue posible cargar productos: ${e.message}")
     }
 }
+
 // =====================
 // Pantalla de Chat
 // =====================
@@ -303,16 +349,14 @@ fun PantallaChatIA(
                 val historial = qs.documents.map { d ->
                     val role = d.getString("role").orEmpty()
                     val text = d.getString("text").orEmpty()
-                    val userUploadedImageUrl = d.getString("imageUrl") // Renombrado para claridad
+                    val userUploadedImageUrl = d.getString("imageUrl")
                     val productUrl = d.getString("productImageUrl")
                     MensajeIA(
                         id = d.getTimestamp("createdAt")?.toDate()?.time ?: System.nanoTime(),
                         texto = text,
                         esUsuario = (role == "user"),
-                        // CAMBIO CLAVE: Asignar userUploadedImageUrl a imageUri.
-                        // Solo debe ser la imagen del usuario, no el producto del asistente.
                         imageUri = userUploadedImageUrl?.toUri(),
-                        bitmap = null, // Ya no es necesario el bitmap si se carga de Firestore
+                        bitmap = null,
                         productImageUrl = productUrl
                     )
                 }
@@ -354,7 +398,7 @@ fun PantallaChatIA(
                 onRemoveAttachment = { selectedImage = null; selectedBitmap = null },
                 onSend = {
                     scope.launch {
-                        if (loading) return@launch // evita dobles taps
+                        if (loading) return@launch
                         val uid = auth.currentUser?.uid ?: run {
                             snackbarHostState.showSnackbar("Debes iniciar sesión para chatear"); return@launch
                         }
@@ -495,7 +539,7 @@ private fun enviarMensajeConGemini(
 
             setTitleIfNeeded(textoPlano.ifBlank { "Imagen" })
 
-            // ===== CONTEXTO / Elección de opciones =====
+            // ===== CONTEXTO / Intenciones =====
             val opciones = extraerOpcionesDelUltimoAsistente(listaMensajes)
             val userTextForModel = opciones?.let {
                 detectarIndiceElegido(textoPlano, it.items.size)?.let { idx ->
@@ -503,7 +547,15 @@ private fun enviarMensajeConGemini(
                 }
             } ?: textoPlano
 
-            val contextualPrompt = buildContextualPrompt(listaMensajes, userTextForModel)
+            val wantsImages = shouldShowCatalogIntent(textoPlano)
+            val accessoryRequested = parseAccessory(textoPlano) != null
+            val isHomeSpace = isHomeSpaceRequest(textoPlano)
+            // imágenes si el usuario las quiere
+            val wantsAccessoryImages = wantsImages && accessoryRequested
+
+            val contextualPrompt = buildContextualPrompt(
+                listaMensajes, userTextForModel, wantsImages, isHomeSpace, accessoryRequested
+            )
 
             // ===== Llamar a Gemini con contexto =====
             val (respuesta, _) = GeminiService.askGeminiSuspend(
@@ -513,18 +565,24 @@ private fun enviarMensajeConGemini(
                 context = context
             )
 
-            // 1) URLs que diga el modelo
+            // 1) URLs que diga el modelo (limpiamos si no corresponde)
             val urlRegex = Regex("""https?://\S+?\.(?:jpg|jpeg|png|webp)(\?\S+)?""", RegexOption.IGNORE_CASE)
-            var modelUrls = urlRegex.findAll(respuesta).map { it.value }.toList()
-            var textoLimpio = respuesta.replace(urlRegex, "").replace(Regex("\n{3,}"), "\n\n").trim()
+            var modelUrls = if (wantsAccessoryImages) {
+                urlRegex.findAll(respuesta).map { it.value }.toList()
+            } else emptyList()
 
-            // 2) Catálogo del MISMO accesorio (multi-estilo) si no hubo URLs y el usuario pidió ver
+            var textoLimpio = respuesta
+                .let { if (!wantsAccessoryImages) it.replace(urlRegex, "") else it }
+                .replace(Regex("\n{3,}"), "\n\n")
+                .trim()
+
+            // 2) Catálogo del MISMO accesorio (multi-estilo) si no hubo URLs y el usuario pidió ver imágenes de accesorio
             var usedCatalog = false
             val catalogUrls: MutableList<String> = mutableListOf()
             var catalogFoundForRequestedType = false
             val stylesUsed: MutableList<StyleDb> = mutableListOf()
-            // Aquí es donde realmente ocurre la conexión entre lo que pidió el usuario y las imágenes
-            if (modelUrls.isEmpty() && shouldShowCatalogIntent(textoPlano)) {
+
+            if (wantsAccessoryImages && modelUrls.isEmpty()) {
                 try {
                     val acc = parseAccessory(textoPlano) ?: AccessoryDb.LAMPARA
                     val preferred = parseStyle(textoPlano)
@@ -541,7 +599,6 @@ private fun enviarMensajeConGemini(
                             .toList()
                     }
 
-                    // 2.1 estilo preferido (si existe)
                     if (preferred != null) {
                         val urlsPref = loadUrls(preferred, acc, targetCount)
                         if (urlsPref.isNotEmpty()) {
@@ -549,7 +606,6 @@ private fun enviarMensajeConGemini(
                             stylesUsed.add(preferred)
                         }
                     }
-                    // 2.2 restantes estilos en orden fijo
                     if (catalogUrls.size < targetCount) {
                         val remaining = ALL_STYLES_ORDERED.filter { it != preferred }
                         for (style in remaining) {
@@ -569,7 +625,7 @@ private fun enviarMensajeConGemini(
                 }
             }
 
-            // 3) Elegir URLs finales y deduplicar (incluye ya mostadas)
+            // 3) Elegir URLs finales y deduplicar (incluye ya mostradas)
             var urls = if (modelUrls.isNotEmpty()) modelUrls else catalogUrls
             val yaMostradas = buildSet {
                 listaMensajes.mapNotNullTo(this) { it.productImageUrl?.trim() }
@@ -581,10 +637,10 @@ private fun enviarMensajeConGemini(
             // 4) Ajustar texto coherente
             if (usedCatalog && urls.isNotEmpty()) {
                 textoLimpio = if (catalogFoundForRequestedType) {
-                    "Aquí tienes algunas opciones según tu criterio. ¿Quieres ver más?"
+                    "Estas son 2–3 referencias visuales del accesorio que mencionaste. ¿Quieres ver más?"
                 } else {
                     val estilosMsg = stylesUsed.joinToString { it.dbValue }
-                    "No encontré exactamente ese estilo, pero te muestro alternativas en otros estilos ($estilosMsg). ¿Te sirven?"
+                    "No encontré exactamente ese estilo, pero te muestro alternativas cercanas ($estilosMsg). ¿Te sirven?"
                 }
             } else if (!usedCatalog && modelUrls.isEmpty()) {
                 if (textoLimpio.isBlank()) {
@@ -598,21 +654,23 @@ private fun enviarMensajeConGemini(
                 }
             }
 
-            // 5) Render en UI
+            // 5) Render en UI (IMÁGENES solo si wantsAccessoryImages)
             withContext(Dispatchers.Main) {
                 if (textoLimpio.isNotBlank()) {
                     listaMensajes.add(MensajeIA(id = System.nanoTime(), texto = textoLimpio, esUsuario = false))
                 }
-                urls.forEach { u ->
-                    listaMensajes.add(
-                        MensajeIA(
-                            id = System.nanoTime(),
-                            texto = "",
-                            esUsuario = false,
-                            imageUri = null,          // evitar duplicado
-                            productImageUrl = u
+                if (wantsAccessoryImages) {
+                    urls.forEach { u ->
+                        listaMensajes.add(
+                            MensajeIA(
+                                id = System.nanoTime(),
+                                texto = "",
+                                esUsuario = false,
+                                imageUri = null,
+                                productImageUrl = u
+                            )
                         )
-                    )
+                    }
                 }
                 onDone()
             }
@@ -623,10 +681,12 @@ private fun enviarMensajeConGemini(
                     mapOf("role" to "assistant", "text" to textoLimpio, "createdAt" to Timestamp.now())
                 ).await()
             }
-            urls.forEach { u ->
-                sessionRef.collection("messages").add(
-                    mapOf("role" to "assistant", "productImageUrl" to u, "createdAt" to Timestamp.now())
-                ).await()
+            if (wantsAccessoryImages) {
+                urls.forEach { u ->
+                    sessionRef.collection("messages").add(
+                        mapOf("role" to "assistant", "productImageUrl" to u, "createdAt" to Timestamp.now())
+                    ).await()
+                }
             }
             sessionRef.update("lastMessageAt", Timestamp.now()).await()
 
